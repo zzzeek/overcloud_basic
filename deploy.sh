@@ -58,7 +58,7 @@ getinput() {
 cleanup_infrared() {
     getinput "WARNING!  Will wipe out the entire infrared checkout, including all infrared hostfiles, ansible will no longer be able to run against current VMs, (Y)es/(n)o"
 
-    # note this implies cleaning up the workspace 
+    # note this implies cleaning up the workspace
     # also
     if [ "$YESNO" = "1" ]; then
         rm -fr ${INFRARED_CHECKOUT}
@@ -177,15 +177,8 @@ cleanup_vms() {
 
     VM_NAMES=""
 
-    if [[ "${STACKS}" == *"stack1"* ]]; then
-        NAMES=$( sudo virsh list --all | cut -c 5-30 | grep -e "^\ *s1" )
-        VM_NAMES="${VM_NAMES} ${NAMES}"
-    fi
-
-    if [[ "${STACKS}" == *"stack2"* ]]; then
-        NAMES=$( sudo virsh list --all | cut -c 5-30 | grep -e "^\ *s2" )
-        VM_NAMES="${VM_NAMES} ${NAMES}"
-    fi
+    NAMES=$( sudo virsh list --all | awk '{print $2}' | grep -vi "name" )
+    VM_NAMES="${VM_NAMES} ${NAMES}"
 
     for name in ${VM_NAMES} ; do
         sudo virsh destroy $name;
@@ -216,15 +209,7 @@ build_vms() {
 
     NODES=""
 
-    if [[ "${STACKS}" == *"stack1"* ]]; then
-        NODES="${NODES}s1undercloud:1,s1controller:3,s1compute:1,"
-        #NODES="${NODES}s1undercloud:1,"
-    fi
-
-    if [[ "${STACKS}" == *"stack2"* ]]; then
-        NODES="${NODES}s2undercloud:1,s2controller:3,s2compute:1,"
-        #NODES="${NODES}s2undercloud:1,"
-    fi
+    NODES="${NODES}undercloud:1,controller:3,compute:3,"
 
     # trim trailing comma
     NODES=${NODES:0:-1}
@@ -242,126 +227,19 @@ build_vms() {
 
 }
 
-build_install_hosts() {
-    # build out hostfiles for next steps.   different steps need a different
-    # view of hosts.
-
-    # build stack1-only hosts file
-    cat ${INFRARED_WORKSPACE}/hosts-prov  | grep -e "^\[\\|s1\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack1_hosts_install
-
-    # build stack2-only hosts file
-    cat ${INFRARED_WORKSPACE}/hosts-prov  | grep -e "^\[\\|s2\|localhost\|hypervisor" > ${INFRARED_WORKSPACE}/stack2_hosts_install
-
-}
-
-build_combined_hosts() {
-   cat /dev/null > ${COMBINED_HOSTS}
-
-   grep ${INFRARED_WORKSPACE}/hosts-prov -e "\(localhost\|hypervisor\).*ansible" >> ${COMBINED_HOSTS}
-   grep ${INFRARED_WORKSPACE}/hosts-prov -e "\(s1\|s2\)undercloud.*ansible" | sed 's/ansible_user=[[:alpha:]-]\+/ansible_user=stack/' >> ${COMBINED_HOSTS}
-   grep ${INFRARED_WORKSPACE}/hosts-prov -e "\(s1\|s2\)\(controller\|compute\).*ansible" | sed 's/ansible_user=[[:alpha:]-]\+/ansible_user=heat-admin/' >> ${COMBINED_HOSTS}
-
-   cat << EOF >> ${COMBINED_HOSTS}
-
-[undercloud]
-s1undercloud-0
-s2undercloud-0
-
-[master_overcloud]
-s1controller-0
-s1controller-1
-
-[follower_overcloud]
-s2controller-0
-s2controller-1
-
-[stack1]
-s1undercloud-0
-s1controller-0
-s1controller-1
-s1controller-2
-
-[stack1_controller]
-s1controller-0
-s1controller-1
-s1controller-2
-
-[stack2]
-s2undercloud-0
-s2controller-0
-s2controller-1
-s2controller-2
-
-[stack2_controller]
-s2controller-0
-s2controller-1
-s2controller-2
-
-[galera_nodes]
-s1controller-0
-s1controller-1
-s1controller-2
-s2controller-0
-s2controller-1
-s2controller-2
-
-[stack1_overcloud_nodes]
-s1compute-0
-s1controller-0
-s1controller-1
-s1controller-2
-
-[stack2_overcloud_nodes]
-s2compute-0
-s2controller-0
-s2controller-1
-s2controller-2
-
-[pacemaker_control_nodes]
-s1controller-0
-s2controller-0
-
-EOF
-}
 
 upload_images() {
     pushd ${INFRARED_CHECKOUT}
-    if [[ "${STACKS}" == *"stack1"* ]]; then
-        scp -F ${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s1undercloud-0:/tmp/
-    fi
-    if [[ "${STACKS}" == *"stack2"* ]]; then
-        scp -F ${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* s2undercloud-0:/tmp/
-    fi
+    scp -F ${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* undercloud-0:/tmp/
     popd
 }
 
 deploy_undercloud() {
 
-    if [[ $STACK == "stack1" ]]; then
-        PROVISIONING_IP_PREFIX=192.168.24
-        LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_install
-        WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
-    fi
+    PROVISIONING_IP_PREFIX=192.168.24
+    LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_install
+    WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
 
-    if [[ $STACK == "stack2" ]]; then
-        PROVISIONING_IP_PREFIX=192.168.25
-        LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_install
-        WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
-    fi
-
-    # infrared only knows "queens", "rocky", or whatever, it doesn't know
-    # "master".  various bits make it fetch "master" bits after that.
-        # -e rr_release_name=${RELEASE} -e rr_master_release=NOTHING \
-
-    # these were renamed to "host" in https://github.com/openstack/instack-undercloud/commit/9c6424df5d9d0cb41ec78cbdddb520f1c1ec604b
-    #    --config-options DEFAULT.undercloud_public_vip=${PROVISIONING_IP_PREFIX}.2 \
-    #    --config-options DEFAULT.undercloud_admin_vip=${PROVISIONING_IP_PREFIX}.3 \
-
-    # dont use ssl, but then the docker stuff fails
-    #    --config-options DEFAULT.generate_service_certificate=false \
-
-    # container_images file works around issue I described at:
-    # https://review.gerrithub.io/c/redhat-openstack/infrared/+/417795/16/plugins/tripleo-undercloud/templates/undercloud.conf.j2#37
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
         --build ${BUILD} \
@@ -420,21 +298,6 @@ setup_routes() {
 
 
 }
-
-if [[ "${STACKS}" == *"stack1"* ]]; then
-    ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
-    SPECIFY_STACK=" -e rh_stack_name=stack1"
-fi
-
-if [[ "${STACKS}" == *"stack2"* ]]; then
-   ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/stack2_hosts_undercloud
-   SPECIFY_STACK=" -e rh_stack_name=stack2"
-fi
-
-if [[ "${STACKS}" == *"stack1"* && "${STACKS}" == *"stack2"* ]]; then
-    ANSIBLE_HOSTS="${COMBINED_HOSTS}"
-    SPECIFY_STACK=""
-fi
 
 
 if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then

@@ -43,13 +43,7 @@
   import_tasks: modify_galera_image.yml
   tags: prepare_containers,make_galera_image
 
-- name: deploy overcloud on stack1
+- name: deploy overcloud
   import_tasks: deploy_overcloud.yml
   tags: run_deploy_overcloud
-  when: "rh_stack_name == 'stack1'"
-
-- name: deploy overcloud on stack2
-  import_tasks: deploy_overcloud.yml
-  tags: run_deploy_overcloud
-  when: "rh_stack_name == 'stack2'"
 

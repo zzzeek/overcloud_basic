@@ -1,8 +1,0 @@
-
-- name: setup undercloud routes
-  hosts: undercloud
-  gather_facts: false
-  roles:
-    - {role: add-undercloud-routes, tags: ['setup_routes'] }
-
-
