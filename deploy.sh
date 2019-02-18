@@ -18,12 +18,12 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
 COMBINED_HOSTS=${INFRARED_WORKSPACE}/combined_hosts
 
-SETUP_CMDS="cleanup_infrared setup_infrared download_images patch_images"
-BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc deploy_undercloud setup_routes"
+SETUP_CMDS="cleanup_infrared setup_infrared download_images"
+BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc deploy_undercloud"
 
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud"}
 
-: ${DEPLOY_OVERCLOUD_TAGS:="hack_tripleo,gen_ssh_key,setup_vlan,create_instackenv,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
+: ${DEPLOY_OVERCLOUD_TAGS:="gen_ssh_key,setup_vlan,create_instackenv,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
 
 
 
@@ -119,25 +119,6 @@ download_images() {
     curl -O ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar
     curl -O ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar
     popd
-}
-
-patch_images() {
-
-    TEMPDIR=$(mktemp -d)
-    pushd $TEMPDIR
-    tar -xf ${OVERCLOUD_IMAGES}/${RELEASE}/overcloud-full.tar
-    chmod 755 ${SCRIPT_HOME}/roles/deploy-overcloud/files/stretch_galera
-    chmod 755 ${SCRIPT_HOME}/roles/deploy-overcloud/files/galera
-    virt-copy-in -a overcloud-full.qcow2 \
-         ${SCRIPT_HOME}/roles/deploy-overcloud/files/stretch_galera \
-         ${SCRIPT_HOME}/roles/deploy-overcloud/files/galera \
-         /usr/lib/ocf/resource.d/heartbeat/
-    # it's important the tar file has no directory info in it,
-    # like ./ .  infrared and probably others assume this is not
-    # present.
-    tar -cf ${OVERCLOUD_IMAGES}/${RELEASE}/overcloud-full.tar *
-    popd
-    rm -fr $TEMPDIR
 }
 
 
@@ -289,16 +270,6 @@ install_vbmc() {
     popd
 }
 
-setup_routes() {
-    pushd ${SCRIPT_HOME}
-    ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${ANSIBLE_HOSTS} ${SPECIFY_STACK} \
-        playbooks/deploy_undercloud_routes.yml
-    popd
-
-
-}
-
 
 if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
     cleanup_infrared
@@ -345,10 +316,6 @@ for stack_arg in $STACKS ; do
     fi
 done
 
-
-if [[ "${CMDS}" == *"setup_routes"* ]]; then
-    setup_routes
-fi
 
 if [[ "${CMDS}" == *"install_vbmc"* ]]; then
     install_vbmc
