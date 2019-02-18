@@ -296,7 +296,6 @@ fi
 if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
     build_networks
     build_vms
-    build_install_hosts
     upload_images
 fi
 
