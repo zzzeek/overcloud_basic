@@ -4,6 +4,7 @@ DIRNAME=`dirname $0`
 SCRIPT_HOME=`realpath $DIRNAME`
 DISK_POOL=/home/infrared_images
 
+
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
@@ -16,7 +17,7 @@ INFRARED_WORKSPACE_NAME=stack
 INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
 ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
-COMBINED_HOSTS=${INFRARED_WORKSPACE}/combined_hosts
+ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
 
 SETUP_CMDS="cleanup_infrared setup_infrared download_images"
 BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc deploy_undercloud"
@@ -145,7 +146,6 @@ cleanup_networks() {
     set -e
 
     rm -f ${INFRARED_WORKSPACE}/stack?_hosts_* \
-       ${COMBINED_HOSTS} \
        ${INFRARED_WORKSPACE}/hosts \
        ${INFRARED_WORKSPACE}/hosts-prov \
        ${INFRARED_WORKSPACE}/hosts-install \
@@ -180,7 +180,7 @@ build_networks() {
     # use virsh with zero machines so the networks build
     # TODO: propose --networks-only flag for infrared
     infrared_cmd virsh -vv \
-        --topology-nodes="s1undercloud:0,s2undercloud:0" \
+        --topology-nodes="undercloud:0" \
         --topology-network=stretch_nets \
         --ansible-args="skip-tags=vms" \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
@@ -201,7 +201,7 @@ build_vms() {
     infrared_cmd virsh -vv \
         --disk-pool="${DISK_POOL}" \
         --topology-nodes="${NODES}" \
-        --topology-network=stretch_nets \
+        --topology-network=zzzeek_networks \
         --topology-extend=yes \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2 \
         --image-url https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 \
@@ -218,8 +218,8 @@ upload_images() {
 deploy_undercloud() {
 
     PROVISIONING_IP_PREFIX=192.168.24
-    LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_install
-    WRITE_HOSTFILE=${INFRARED_WORKSPACE}/stack1_hosts_undercloud
+    LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/hosts_install
+    WRITE_HOSTFILE=${ANSIBLE_HOSTS}
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
@@ -256,7 +256,7 @@ deploy_overcloud() {
         -e release_name=${RELEASE} \
         -e container_namespace=${RELEASE_OR_MASTER} \
         -e container_tag=${BUILD} \
-        -e working_dir=/home/stack ${SPECIFY_STACK} \
+        -e working_dir=/home/stack  \
         playbooks/deploy_overcloud.yml
     popd
 
@@ -265,7 +265,7 @@ deploy_overcloud() {
 install_vbmc() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${ANSIBLE_HOSTS} ${SPECIFY_STACK} \
+        -i ${ANSIBLE_HOSTS}  \
         playbooks/deploy_vbmc.yml
     popd
 }
@@ -285,10 +285,6 @@ if [[ "${CMDS}" == *"download_images"* ]]; then
     download_images
 fi
 
-if [[ "${CMDS}" == *"patch_images"* ]]; then
-    patch_images
-fi
-
 
 setup_infrared_env
 
@@ -304,17 +300,9 @@ if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
     upload_images
 fi
 
-if [[ "${CMDS}" == *"build_hosts"* ]]; then
-    build_combined_hosts
+if [[ "${CMDS}" == *"deploy_undercloud"* ]]; then
+    deploy_undercloud
 fi
-
-for stack_arg in $STACKS ; do
-    STACK="${stack_arg}"
-
-    if [[ "${CMDS}" == *"deploy_undercloud"* ]]; then
-     deploy_undercloud
-    fi
-done
 
 
 if [[ "${CMDS}" == *"install_vbmc"* ]]; then

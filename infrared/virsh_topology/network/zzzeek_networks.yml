@@ -1,0 +1,43 @@
+
+---
+networks:
+    net1:
+        external_connectivity: no
+        name: "provisioning"
+        ip_address: "192.168.24.254"
+        netmask: "255.255.255.0"
+    net2:
+        external_connectivity: yes
+        name: "external"
+        ip_address: "192.168.22.1"
+        netmask: "255.255.255.0"
+        forward: nat
+        dhcp:
+            range:
+                start: "192.168.22.10"
+                end: "192.168.22.50"
+            subnet_cidr: "192.168.22.1/24"
+            subnet_gateway: "192.168.22.1"
+
+nodes:
+    undercloud:
+        interfaces:
+            - network: "provisioning"
+            - network: "external"
+        external_network:
+            network: "external"
+
+    controller:
+        interfaces:
+            - network: "provisioning"
+            - network: "external"
+        external_network:
+            network: "external"
+
+    compute:
+        interfaces:
+            - network: "provisioning"
+            - network: "external"
+        external_network:
+            network: "external"
+
