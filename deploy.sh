@@ -136,7 +136,7 @@ setup_infrared_env() {
 cleanup_networks() {
     set +e
 
-    NETWORK_NAMES=$( sudo virsh net-list --all | cut -c 1-20 | grep -e '^ *\(s1\|s2\|stretch\)' )
+    NETWORK_NAMES=$( sudo virsh net-list --all | awk '{print $1}' | grep -v Name )
 
     for name in ${NETWORK_NAMES} ; do
         sudo virsh net-destroy $name;
@@ -181,7 +181,7 @@ build_networks() {
     # TODO: propose --networks-only flag for infrared
     infrared_cmd virsh -vv \
         --topology-nodes="undercloud:0" \
-        --topology-network=stretch_nets \
+        --topology-network=zzzeek_networks \
         --ansible-args="skip-tags=vms" \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2
 }
