@@ -4,6 +4,7 @@ DIRNAME=`dirname $0`
 SCRIPT_HOME=`realpath $DIRNAME`
 DISK_POOL=/home/infrared_images
 
+COMPUTE_SCALE="3"
 
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 CHECKOUTS=${SCRIPT_HOME}/checkouts
@@ -190,7 +191,7 @@ build_vms() {
 
     NODES=""
 
-    NODES="${NODES}undercloud:1,controller:3,compute:3,"
+    NODES="${NODES}undercloud:1,controller:3,compute:${COMPUTE_SCALE},"
 
     # trim trailing comma
     NODES=${NODES:0:-1}
@@ -256,6 +257,7 @@ deploy_overcloud() {
         -e container_namespace=${RELEASE_OR_MASTER} \
         -e container_tag=${BUILD} \
         -e working_dir=/home/stack  \
+        -e compute_scale="${COMPUTE_SCALE}" \
         playbooks/deploy_overcloud.yml
     popd
 

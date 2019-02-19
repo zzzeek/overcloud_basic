@@ -11,5 +11,7 @@
     release_numeric_version: "{{ release_numeric_versions[release_name] }}"
     management_ipv4_address: "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}"
     overcloud_nodes: "{{ groups.get('overcloud_nodes', []) }}"
-
+    # this was set to the local directory in stretch_galera, can be made
+    # dynamic again if we need to modify templates
+    tripleo_heat_templates: "/usr/share/openstack-tripleo-heat-templates/"
 

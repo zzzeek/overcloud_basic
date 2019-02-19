@@ -20,7 +20,6 @@ openstack overcloud deploy \
     -e ${OOO_HEAT_TEMPLATES}/environments/config-debug.yaml  \
     -e ${OOO_HEAT_TEMPLATES}/environments/docker.yaml  \
     -e ${OOO_HEAT_TEMPLATES}/environments/docker-ha.yaml  \
-    -e ${OOO_HEAT_TEMPLATES}/environments/docker-stretch-galera.yaml  \
     -e {{ working_dir }}/docker_registry.yaml  \
     -e ${OOO_HEAT_TEMPLATES}/environments/network-isolation.yaml \
     -e {{ working_dir }}/network-environment.yaml  \
