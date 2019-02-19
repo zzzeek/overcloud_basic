@@ -13,7 +13,8 @@
 
     - name: remove .tripleo environments directory if present
       shell: mv .tripleo/environments .tripleo/environments_save
-      chdir: "{{ working_dir }}/stackrc"
+      args:
+        chdir: "{{ working_dir }}/stackrc"
       when: env_file.stat.exists | bool
 
     - name: create container configs
@@ -29,7 +30,8 @@
 
     - name: restore .tripleo environments directory if present
       shell: mv .tripleo/environments_save .tripleo/environments
-      chdir: "{{ working_dir }}/stackrc"
+      args:
+        chdir: "{{ working_dir }}/stackrc"
       when: env_file.stat.exists | bool
 
     - name: transfer docker images
