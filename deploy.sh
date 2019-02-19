@@ -218,7 +218,7 @@ upload_images() {
 deploy_undercloud() {
 
     PROVISIONING_IP_PREFIX=192.168.24
-    LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/hosts_install
+    LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/hosts-prov
     WRITE_HOSTFILE=${ANSIBLE_HOSTS}
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
@@ -234,7 +234,6 @@ deploy_undercloud() {
         --config-options ctlplane-subnet.gateway=${PROVISIONING_IP_PREFIX}.1 \
         --config-options DEFAULT.cidr=${PROVISIONING_IP_PREFIX}.0/24 \
         --config-options ctlplane-subnet.cidr=${PROVISIONING_IP_PREFIX}.0/24 \
-        --config-options DEFAULT.masquerade_network=${PROVISIONING_IP_PREFIX}.0/24 \
         --config-options DEFAULT.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
         --config-options ctlplane-subnet.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
         --config-options DEFAULT.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \

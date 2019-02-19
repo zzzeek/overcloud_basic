@@ -1,4 +1,4 @@
-name: s1undercloud
+name: undercloud
 prefix: null
 cpu: "2"
 cpumodel: "host-model"
