@@ -31,8 +31,8 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc deploy_undercloud"
 
 RELEASE=stein
 RELEASE_OR_MASTER=master
-#BUILD=current-tripleo-rdo-internal
-BUILD=current-tripleo
+BUILD=current-tripleo-rdo-internal
+#BUILD=current-tripleo
 RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER}/delorean/${BUILD}/"
 IMAGE_URL="file:///tmp/"
 
@@ -228,21 +228,7 @@ deploy_undercloud() {
         -e rr_use_public_repos=true \
         -e rr_release_name=master \
         --config-options DEFAULT.enable_telemetry=false \
-        --config-options DEFAULT.local_ip=${PROVISIONING_IP_PREFIX}.1/24 \
-        --config-options DEFAULT.undercloud_public_host=${PROVISIONING_IP_PREFIX}.2 \
-        --config-options DEFAULT.undercloud_admin_host=${PROVISIONING_IP_PREFIX}.3 \
-        --config-options DEFAULT.gateway=${PROVISIONING_IP_PREFIX}.1 \
-        --config-options ctlplane-subnet.gateway=${PROVISIONING_IP_PREFIX}.1 \
-        --config-options DEFAULT.cidr=${PROVISIONING_IP_PREFIX}.0/24 \
-        --config-options ctlplane-subnet.cidr=${PROVISIONING_IP_PREFIX}.0/24 \
-        --config-options DEFAULT.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
-        --config-options ctlplane-subnet.dhcp_start=${PROVISIONING_IP_PREFIX}.5 \
-        --config-options DEFAULT.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
-        --config-options ctlplane-subnet.dhcp_end=${PROVISIONING_IP_PREFIX}.24 \
-        --config-options DEFAULT.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
-        --config-options ctlplane-subnet.inspection_iprange=${PROVISIONING_IP_PREFIX}.100,${PROVISIONING_IP_PREFIX}.120 \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
-        --config-options DEFAULT.container_images_file="" \
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
