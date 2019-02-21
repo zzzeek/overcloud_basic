@@ -7,6 +7,8 @@ DISK_POOL=/home/infrared_images
 COMPUTE_SCALE="3"
 
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
+NTP_SERVER="clock.corp.redhat.com"
+
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
 INFRARED_CHECKOUT=${CHECKOUTS}/infrared
@@ -229,6 +231,7 @@ deploy_undercloud() {
         -e rr_release_name=master \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
+        --config-options DEFAULT.undercloud_ntp_servers="${NTP_SERVER}" \
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
