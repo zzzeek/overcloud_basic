@@ -1,0 +1,16 @@
+# Traceback (most recent call last):
+#  File "/usr/bin/openstack", line 6, in <module>
+#    from openstackclient.shell import main
+#  File "/usr/lib/python2.7/site-packages/openstackclient/shell.py", line 23, in <module>
+#    from osc_lib import shell
+# ...
+#  File "/usr/lib/python2.7/site-packages/deprecation.py", line 17, in <module>
+#    from packaging import version
+# ImportError: No module named packaging
+
+- name: install python2-packaging
+  become: true
+  yum:
+      name: python2-packaging
+      state: latest
+      disable_gpg_check: yes

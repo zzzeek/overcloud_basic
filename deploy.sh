@@ -21,7 +21,7 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
 
 SETUP_CMDS="cleanup_infrared setup_infrared download_images"
-BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc deploy_undercloud"
+BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc pre_undercloud deploy_undercloud"
 
 : ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud"}
 
@@ -257,6 +257,14 @@ install_vbmc() {
     popd
 }
 
+pre_undercloud() {
+    pushd ${SCRIPT_HOME}
+    ${ANSIBLE_PLAYBOOK} -vv \
+        -i ${ANSIBLE_HOSTS}  \
+        playbooks/pre_undercloud.yml
+    popd
+}
+
 
 if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
     cleanup_infrared
@@ -284,6 +292,10 @@ if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
     build_networks
     build_vms
     upload_images
+fi
+
+if [[ "${CMDS}" == *"pre_undercloud"* ]]; then
+    pre_undercloud
 fi
 
 if [[ "${CMDS}" == *"deploy_undercloud"* ]]; then
