@@ -30,12 +30,27 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc pre_undercloud depl
 : ${DEPLOY_OVERCLOUD_TAGS:="gen_ssh_key,setup_vlan,create_instackenv,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
 
 
+RELEASE=rocky
 
-RELEASE=stein
-RELEASE_OR_MASTER=master
-BUILD=current-tripleo-rdo-internal
+# this token goes into the URL as follows:
+# https://trunk.rdoproject.org/centos7-{{ RELEASE_OR_MASTER_DLRN }}/{{ BUILD }}/delorean.repo
+RELEASE_OR_MASTER_DLRN=rocky
+BUILD=current-tripleo-rdo
+
+# options here:
+#BUILD=current-tripleo-rdo-internal    most tested / oldest
+#BUILD=current-tripleo-rdo
 #BUILD=current-tripleo
-RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER}/delorean/${BUILD}/"
+#BUILD=current                         least tested / newest
+
+
+
+# this token is for the images.rdoproject.org link
+RELEASE_OR_MASTER_IMAGES=master
+RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER_IMAGES}/delorean/${BUILD}/"
+
+
+
 IMAGE_URL="file:///tmp/"
 
 set -e
@@ -228,7 +243,7 @@ deploy_undercloud() {
         --inventory=${LIMIT_HOSTFILE} \
         --build ${BUILD} \
         -e rr_use_public_repos=true \
-        -e rr_release_name=master \
+        -e rr_release_name=${RELEASE_OR_MASTER_DLRN} \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
         --config-options DEFAULT.undercloud_ntp_servers="${NTP_SERVER}" \
@@ -243,10 +258,11 @@ deploy_overcloud() {
         -i ${ANSIBLE_HOSTS} \
         --tags "${DEPLOY_OVERCLOUD_TAGS}" \
         -e release_name=${RELEASE} \
-        -e container_namespace=${RELEASE_OR_MASTER} \
+        -e container_namespace=${RELEASE_OR_MASTER_IMAGES} \
         -e container_tag=${BUILD} \
         -e working_dir=/home/stack  \
         -e compute_scale="${COMPUTE_SCALE}" \
+        -e ntp_server="${NTP_SERVER}" \
         playbooks/deploy_overcloud.yml
     popd
 

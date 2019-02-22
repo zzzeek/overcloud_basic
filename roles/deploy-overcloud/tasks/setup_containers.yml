@@ -34,6 +34,14 @@
         chdir: "{{ working_dir }}/stackrc"
       when: env_file.stat.exists | bool
 
+      # something weird here when working manually:
+      # https://bugzilla.redhat.com/show_bug.cgi?id=1646787
+      # sudo bash
+      # [root@undercloud stack]# exec su -l stack
+      # then it works ?
+      # OK - when undercloud has been installed, stack user needs to log
+      # out and log in again in order to push to docker
+
     - name: transfer docker images
       shell: >
           source {{ working_dir }}/stackrc;

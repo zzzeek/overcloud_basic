@@ -8,6 +8,13 @@
 #    from packaging import version
 # ImportError: No module named packaging
 
+
+# WE SHOULD NOT NEED THIS FOR ROCKY.
+# CORRECT NON-DEPENDENT PACKAGE: python2-deprecation-1.0-3.el7.noarch
+# $ cat /etc/centos-release
+# CentOS Linux release 7.6.1810 (Core)
+#
+#
 - name: install python2-packaging
   become: true
   yum:

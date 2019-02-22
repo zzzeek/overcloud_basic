@@ -27,7 +27,7 @@ openstack overcloud deploy \
     -e ${OOO_HEAT_TEMPLATES}/environments/disable-telemetry.yaml   \
     -e {{ working_dir }}/naming_things.yaml  \
     --validation-warnings-fatal   --compute-scale {{ compute_scale }} --control-scale {{ control_scale }}  \
-    --ntp-server pool.ntp.org \
+    --ntp-server {{ ntp_server }} \
     ${DEPLOY_ENV_YAML:+-e $DEPLOY_ENV_YAML} "$@" && status_code=0 || status_code=$?
 
 
