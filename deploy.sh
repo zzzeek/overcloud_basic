@@ -247,6 +247,7 @@ deploy_undercloud() {
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
         --config-options DEFAULT.undercloud_ntp_servers="${NTP_SERVER}" \
+        --config-options DEFAULT.container_images_file="/home/stack/containers-prepare-parameter.yaml" \
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}

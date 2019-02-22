@@ -2,9 +2,25 @@
   stat:
     path: "{{ working_dir }}/overcloud_containers.yaml"
   register: overcloud_containers
+  when: release_numeric_version <= 13
 
-- name: install docker images
-  when: not overcloud_containers.stat.exists | bool
+# see https://github.com/openstack/tripleo-quickstart-extras/commit/b3794ff03ab841bbbc15a339e35a7ec02b193111#diff-51f6a4c98274d504643778b3633252cf
+# note containers-prepare-parameter.yaml must be generated, either by us
+# or by undercloud install (comes from undercloud.conf)
+- name: setup docker images, post-queens style
+  when: release_numeric_version > 13
+  block:
+    - name: create container configs
+      shell: >
+          source {{ working_dir }}/stackrc;
+          openstack tripleo container image prepare
+          --output-env-file {{ working_dir }}/containers-default-parameters.yaml
+          -e {{ working_dir }}/containers-prepare-parameter.yaml
+
+- name: install docker images, queens and previous style
+  when:
+    - not overcloud_containers.stat.exists | bool
+    - release_numeric_version <= 13
   block:
     - name: work around https://bugs.launchpad.net/tripleo/+bug/1727347
       stat:
@@ -16,6 +32,7 @@
       args:
         chdir: "{{ working_dir }}/stackrc"
       when: env_file.stat.exists | bool
+
 
     - name: create container configs
       shell: >
