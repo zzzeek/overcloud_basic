@@ -15,9 +15,9 @@
 # CentOS Linux release 7.6.1810 (Core)
 #
 #
-- name: install python2-packaging
-  become: true
-  yum:
-      name: python2-packaging
-      state: latest
-      disable_gpg_check: yes
+# - name: install python2-packaging
+#   become: true
+#   yum:
+#       name: python2-packaging
+#       state: latest
+#      disable_gpg_check: yes
