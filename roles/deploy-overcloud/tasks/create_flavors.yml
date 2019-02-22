@@ -194,7 +194,7 @@
       with_items: "{{ resource_class }}"
   when:
       - check_nodename.rc == 0
-      - release_numeric_version >= 12
+      - release_numeric_version | int >= 12
 
       # infrared's --resource-class-enabled flag
       # - install.resource.class.enabled

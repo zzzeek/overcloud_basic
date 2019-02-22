@@ -13,7 +13,7 @@
       user: stack
       key: "{{ uc_pubkey_result.stdout }}"
   delegate_to: hypervisor
-  when: release_numeric_version < 11
+  when: release_numeric_version | int < 11
 
 - name: Get overcloud nodes
   set_fact:

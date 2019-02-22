@@ -20,7 +20,7 @@ openstack overcloud deploy \
     -e ${OOO_HEAT_TEMPLATES}/environments/config-debug.yaml  \
     -e ${OOO_HEAT_TEMPLATES}/environments/docker.yaml  \
     -e ${OOO_HEAT_TEMPLATES}/environments/docker-ha.yaml  \
-{% if release_numeric_version <= 13 %}
+{% if release_numeric_version |int <= 13 %}
     -e {{ working_dir }}/docker_registry.yaml  \
 {% else %}
     -e {{ working_dir }}/containers-default-parameters.yaml  \

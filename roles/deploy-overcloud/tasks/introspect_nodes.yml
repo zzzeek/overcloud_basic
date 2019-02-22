@@ -10,7 +10,7 @@
       set -eo pipefail
       source {{ working_dir }}/stackrc
 
-      {% if release_numeric_version < 13 %}
+      {% if release_numeric_version | int < 13 %}
       openstack baremetal import --json {{ working_dir }}/instackenv.json
       openstack baremetal configure boot
       {% else %}
@@ -20,7 +20,7 @@
 - name: start node introspection
   shell: |
       source {{ working_dir }}/stackrc
-      {% if release_numeric_version < 13 %}
+      {% if release_numeric_version | int < 13 %}
       openstack baremetal introspection bulk start
       {% else %}
       openstack overcloud node introspect --provide --all-manageable

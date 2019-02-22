@@ -8,19 +8,19 @@
 # note containers-prepare-parameter.yaml must be generated, either by us
 # or by undercloud install (comes from undercloud.conf)
 - name: setup docker images, post-queens style
-  when: release_numeric_version > 13
+  when: release_numeric_version | int > 13
   block:
     - name: create container configs
       shell: >
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare
           --output-env-file {{ working_dir }}/containers-default-parameters.yaml
-          -e {{ working_dir }}/containers-prepare-parameter.yaml
+          -e {{ working_dir }}/tripleo-config-generated-env-files/containers-prepare-parameter.yaml
 
 - name: install docker images, queens and previous style
   when:
+    - release_numeric_version | int <= 13
     - not overcloud_containers.stat.exists | bool
-    - release_numeric_version <= 13
   block:
     - name: work around https://bugs.launchpad.net/tripleo/+bug/1727347
       stat:
