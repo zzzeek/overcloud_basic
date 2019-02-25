@@ -135,11 +135,29 @@ setup_infrared() {
 download_images() {
     mkdir -p ${OVERCLOUD_IMAGES}/${RELEASE}
     pushd ${OVERCLOUD_IMAGES}/${RELEASE}
-    curl -O ${RDO_OVERCLOUD_IMAGES}/ironic-python-agent.tar
-    curl -O ${RDO_OVERCLOUD_IMAGES}/overcloud-full.tar
+    do_curl_w_md5 ${RDO_OVERCLOUD_IMAGES} ironic-python-agent.tar
+    do_curl_w_md5 ${RDO_OVERCLOUD_IMAGES} overcloud-full.tar
     popd
 }
 
+do_curl_w_md5() {
+    CACHE="/tmp/mikes_curl_cache"
+    URL=$1
+    FILENAME=$2
+
+    if [[ ! -d "${CACHE}" ]]; then
+        mkdir -p "${CACHE}"
+    fi
+
+    MD5=$( curl -s "${URL}/${FILENAME}.md5" | awk '{print $1}' )
+
+    if [[ -f "${CACHE}/${FILENAME}_${MD5}" ]]; then
+        cp "${CACHE}/${FILENAME}_${MD5}" "${FILENAME}"
+    else
+        curl -O "${URL}/${FILENAME}"
+        cp "${FILENAME}" "${CACHE}/${FILENAME}_${MD5}"
+    fi
+}
 
 setup_infrared_env() {
     if [[ -d $INFRARED_CHECKOUT ]] ; then
