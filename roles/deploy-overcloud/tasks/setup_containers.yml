@@ -10,14 +10,14 @@
 - name: setup docker images, post-queens style
   when: release_numeric_version | int > 13
   block:
-    - name: create container configs, step 1
+    - name: "create container configs, step 1"
       shell: >
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare default 
           --local-push-destination
           --output-env-file {{ working_dir }}/tripleo-config-generated-env-files/containers-prepare-parameter.yaml
 
--   - name: create container configs, step 2 download
+    - name: "create container configs, step 2 download"
       shell: >
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare
