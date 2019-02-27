@@ -33,9 +33,9 @@ BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc pre_undercloud depl
 RELEASE=rocky
 
 # this token goes into the URL as follows:
-# https://trunk.rdoproject.org/centos7-{{ RELEASE_OR_MASTER_DLRN }}/{{ BUILD }}/delorean.repo
 RELEASE_OR_MASTER_DLRN=rocky
 BUILD=current-tripleo-rdo
+DLRN="https://trunk.rdoproject.org/centos7-${RELEASE_OR_MASTER_DLRN}/${BUILD}/delorean.repo"
 
 # options here:
 #BUILD=current-tripleo-rdo-internal    most tested / oldest
@@ -46,8 +46,11 @@ BUILD=current-tripleo-rdo
 
 
 # this token is for the images.rdoproject.org link
-RELEASE_OR_MASTER_IMAGES=master
-RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER_IMAGES}/delorean/${BUILD}/"
+RELEASE_OR_MASTER_IMAGES=rocky/rdo_trunk
+# RELEASE_OR_MASTER_IMAGES=queens/delorean
+# RELEASE_OR_MASTER_IMAGES=master/delorean
+# etc
+RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER_IMAGES}/"
 
 
 
@@ -135,8 +138,11 @@ setup_infrared() {
 download_images() {
     mkdir -p ${OVERCLOUD_IMAGES}/${RELEASE}
     pushd ${OVERCLOUD_IMAGES}/${RELEASE}
-    do_curl_w_md5 ${RDO_OVERCLOUD_IMAGES} ironic-python-agent.tar
-    do_curl_w_md5 ${RDO_OVERCLOUD_IMAGES} overcloud-full.tar
+
+    DLRN_HASH=$( curl -s "${DLRN}" | grep baseurl | awk -F'/' '{print $NF}' )
+
+    do_curl_w_md5 "${RDO_OVERCLOUD_IMAGES}/${DLRN_HASH}" ironic-python-agent.tar
+    do_curl_w_md5 "${RDO_OVERCLOUD_IMAGES}/${DLRN_HASH}" overcloud-full.tar
     popd
 }
 
