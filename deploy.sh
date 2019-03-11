@@ -147,7 +147,7 @@ download_images() {
 }
 
 do_curl_w_md5() {
-    CACHE="/tmp/mikes_curl_cache"
+    CACHE="${HOME}/mikes_curl_cache"
     URL=$1
     FILENAME=$2
 
