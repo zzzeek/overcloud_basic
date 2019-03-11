@@ -129,11 +129,26 @@ setup_infrared() {
         pip install --upgrade setuptools
         pip install .
 
-        .venv/bin/infrared plugin add all
+        setup_infrared_env
+
+        infrared plugin add all
 
         popd
     fi
 }
+
+setup_infrared_env() {
+    if [[ -d $INFRARED_CHECKOUT ]] ; then
+        . ${INFRARED_CHECKOUT}/.venv/bin/activate
+
+        # checkout -c doesn't work, still errors out if the workspace exists.
+        infrared_cmd workspace create ${INFRARED_WORKSPACE_NAME} && true
+
+        infrared_cmd workspace checkout ${INFRARED_WORKSPACE_NAME}
+
+    fi
+}
+
 
 download_images() {
     mkdir -p ${OVERCLOUD_IMAGES}/${RELEASE}
@@ -162,16 +177,6 @@ do_curl_w_md5() {
     else
         curl -O "${URL}/${FILENAME}"
         cp "${FILENAME}" "${CACHE}/${FILENAME}_${MD5}"
-    fi
-}
-
-setup_infrared_env() {
-    if [[ -d $INFRARED_CHECKOUT ]] ; then
-        . ${INFRARED_CHECKOUT}/.venv/bin/activate
-
-        # checkout -c doesn't work, still errors out if the workspace exists.
-        infrared_cmd workspace create ${INFRARED_WORKSPACE_NAME} && true
-        infrared_cmd workspace checkout ${INFRARED_WORKSPACE_NAME}
     fi
 }
 
