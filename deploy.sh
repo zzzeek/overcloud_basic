@@ -22,14 +22,6 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
 ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
 
-SETUP_CMDS="cleanup_infrared setup_infrared download_images"
-BUILD_ENVIRONMENT_CMDS="rebuild_vms build_hosts install_vbmc pre_undercloud deploy_undercloud"
-
-: ${CMDS:="${SETUP_CMDS} ${BUILD_ENVIRONMENT_CMDS} deploy_overcloud"}
-
-: ${DEPLOY_OVERCLOUD_TAGS:="gen_ssh_key,setup_vlan,create_instackenv,tune_undercloud,introspect_nodes,create_flavors,build_heat_config,prepare_containers,run_deploy_overcloud"}
-
-
 RELEASE=rocky
 
 # this token goes into the URL as follows:
@@ -100,7 +92,7 @@ reset_workspace() {
 }
 
 
-setup_infrared() {
+install_infrared() {
     SYSTEM_PYTHON_2=/usr/bin/python2
 
     # sudo yum install git gcc libffi-devel openssl-devel python-virtualenv libselinux-python
@@ -138,14 +130,17 @@ setup_infrared() {
 }
 
 setup_infrared_env() {
-    if [[ -d $INFRARED_CHECKOUT ]] ; then
-        . ${INFRARED_CHECKOUT}/.venv/bin/activate
+    if [[ "${_INFRARED_SETUP}" == "" ]]; then
+        if [[ -d $INFRARED_CHECKOUT ]] ; then
+            . ${INFRARED_CHECKOUT}/.venv/bin/activate
 
-        # checkout -c doesn't work, still errors out if the workspace exists.
-        infrared_cmd workspace create ${INFRARED_WORKSPACE_NAME} && true
+            # checkout -c doesn't work, still errors out if the workspace exists.
+            infrared_cmd workspace create ${INFRARED_WORKSPACE_NAME} && true
 
-        infrared_cmd workspace checkout ${INFRARED_WORKSPACE_NAME}
+            infrared_cmd workspace checkout ${INFRARED_WORKSPACE_NAME}
+        fi
 
+        _INFRARED_SETUP="1"
     fi
 }
 
@@ -314,50 +309,128 @@ pre_undercloud() {
 }
 
 
-if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
-    cleanup_infrared
-elif [[ "${CMDS}" == *"rebuild_vms"* ]]; then
-    reset_workspace
-fi
+main() {
 
-if [[ "${CMDS}" == *"setup_infrared"* ]]; then
-    setup_infrared
-fi
+    INFRARED_CMDS="cleanup_infrared install_infrared"
+    VMS_CMDS="rebuild_vms build_hosts"
+    UNDERCLOUD_CMDS="download_images install_vbmc pre_undercloud deploy_undercloud"
+    OVERCLOUD_CMDS="gen_ssh_key setup_vlan create_instackenv tune_undercloud introspect_nodes create_flavors build_heat_config prepare_containers run_deploy_overcloud"
 
-if [[ "${CMDS}" == *"download_images"* ]]; then
-    download_images
-fi
+    CMDS="$@"
+
+    DEPLOY_OVERCLOUD_TAGS=""
+    for tag in ${OVERCLOUD_CMDS}; do
+        if [[ "${CMDS}" == *"${tag}"* ]]; then
+            DEPLOY_OVERCLOUD_TAGS="${tag},${DEPLOY_OVERCLOUD_TAGS}"
+        fi
+    done
+
+    if [[ "${DEPLOY_OVERCLOUD_TAGS}" != "" ]]; then
+        CMDS="${CMDS} deploy_overcloud"
+    fi
+
+    if [[ "${CMDS}" == *"setup_infrared"* ]]; then
+        CMDS="${INFRARED_CMDS} ${CMDS}"
+    fi
+
+    if [[ "${CMDS}" == *"setup_vms"* ]]; then
+        CMDS="${VMS_CMDS} ${CMDS}"
+    fi
+
+    if [[ "${CMDS}" == *"install_undercloud"* ]]; then
+        CMDS="${UNDERCLOUD_CMDS} ${CMDS}"
+    fi
+
+    if [[ "${CMDS}" == "" ]]; then
+        CMDS="help"
+    fi
+
+    if [[ "${CMDS}" == *"help"* ]]; then
+        set +x
+        echo -e "\nusage: $0 <commands>\n"
+        echo -e "commands and/or subcommands can be specified in any order, and are run"
+        echo -e "in their order of dependency.   The below sections illustrate "
+        echo    "top level commands that each run a whole section of subcommands, "
+        echo    "as well as the listing of individual subcommands.  All are in "
+        echo    "order of dependency:"
+        echo -e "\n- setup_infrared - ensures infrared is installed "
+        echo    "in a virtual environment here in the current directory "
+        echo    "and our own network / VM templates are added. Includes the "
+        echo    "following subcommands:"
+        for cmd in ${INFRARED_CMDS}; do
+            echo "   - $cmd"
+        done
+        echo -e "\n- setup_vms - uses infrared to build the libvirt networks "
+        echo    "and VMs for the undercloud / overcloud.  Includes the "
+        echo    "following subcommands:"
+        for cmd in ${VMS_CMDS}; do
+            echo "   - $cmd"
+        done
+        echo -e "\ninstall_undercloud - runs some undercloud setup steps that "
+        echo    "we've ported and modified from infrared, and then uses "
+        echo    "infrared to run the final undercloud deploy. Includes the "
+        echo    "following subcommands:"
+        for cmd in ${UNDERCLOUD_CMDS}; do
+            echo "   - $cmd"
+        done
+        echo -e "\ndeploy_overcloud - runs our own overcloud playbook to "
+        echo    "install the overcloud. The subcommands here are actually "
+        echo    "ansible tags that can also be specified to exclude the "
+        echo    "others.   Sub-commands (tags) include:"
+        for cmd in ${OVERCLOUD_CMDS}; do
+            echo "   - $cmd"
+        done
+        exit
+    fi
+
+    if [[ "${CMDS}" == *"cleanup_infrared"* ]]; then
+        cleanup_infrared
+    elif [[ "${CMDS}" == *"rebuild_vms"* ]]; then
+        reset_workspace
+    fi
+
+    if [[ "${CMDS}" == *"install_infrared"* ]]; then
+        install_infrared
+    fi
+
+    if [[ "${CMDS}" == *"download_images"* ]]; then
+        download_images
+    fi
 
 
-setup_infrared_env
+    if [[ "${CMDS}" == *"rebuild_vms"* || "${CMDS}" == *"cleanup_virt"* ]]; then
+        cleanup_networks
+        cleanup_vms
+    fi
 
-if [[ "${CMDS}" == *"rebuild_vms"* || "${CMDS}" == *"cleanup_virt"* ]]; then
-    cleanup_networks
-    cleanup_vms
-fi
+    if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
+        setup_infrared_env
+        build_networks
+        build_vms
+        upload_images
+    fi
 
-if [[ "${CMDS}" == *"rebuild_vms"* ]]; then
-    build_networks
-    build_vms
-    upload_images
-fi
+    if [[ "${CMDS}" == *"pre_undercloud"* ]]; then
+        pre_undercloud
+    fi
 
-if [[ "${CMDS}" == *"pre_undercloud"* ]]; then
-    pre_undercloud
-fi
-
-if [[ "${CMDS}" == *"deploy_undercloud"* ]]; then
-    deploy_undercloud
-fi
-
-
-if [[ "${CMDS}" == *"install_vbmc"* ]]; then
-    install_vbmc
-fi
+    if [[ "${CMDS}" == *"deploy_undercloud"* ]]; then
+        setup_infrared_env
+        deploy_undercloud
+    fi
 
 
-if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
- deploy_overcloud
-fi
+    if [[ "${CMDS}" == *"install_vbmc"* ]]; then
+        install_vbmc
+    fi
+
+
+    if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
+     deploy_overcloud
+    fi
+}
+
+main "$@"
+
 
 
