@@ -20,7 +20,8 @@ INFRARED_WORKSPACE_NAME=stack
 INFRARED_WORKSPACE=${INFRARED_CHECKOUT}/.workspaces/${INFRARED_WORKSPACE_NAME}
 ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 
-ANSIBLE_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
+UNDERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
+OVERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_overcloud
 
 RELEASE=rocky
 
@@ -250,6 +251,16 @@ build_vms() {
 
 }
 
+write_overcloud_hosts() {
+   cp ${INFRARED_WORKSPACE}/hosts-prov ${OVERCLOUD_HOSTS}
+
+   sed -i -E 's/(controller.*)ansible_user=[[:alpha:]-]+(.*)/\1ansible_user=heat-admin\2/' ${OVERCLOUD_HOSTS}
+   sed -i -E 's/(compute.*)ansible_user=[[:alpha:]-]+(.*)/\1ansible_user=heat-admin\2/' ${OVERCLOUD_HOSTS}
+   sed -i -E 's/(undercloud.*)ansible_user=[[:alpha:]-]+(.*)/\1ansible_user=stack\2/' ${OVERCLOUD_HOSTS}
+
+
+}
+
 
 upload_images() {
     pushd ${INFRARED_CHECKOUT}
@@ -261,7 +272,7 @@ deploy_undercloud() {
 
     PROVISIONING_IP_PREFIX=192.168.24
     LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/hosts-prov
-    WRITE_HOSTFILE=${ANSIBLE_HOSTS}
+    WRITE_HOSTFILE=${UNDERCLOUD_HOSTS}
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
@@ -274,12 +285,13 @@ deploy_undercloud() {
         --images-task import --images-url ${IMAGE_URL}
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
+    write_overcloud_hosts
 }
 
 deploy_overcloud() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${ANSIBLE_HOSTS} \
+        -i ${UNDERCLOUD_HOSTS} \
         --tags "${DEPLOY_OVERCLOUD_TAGS}" \
         -e release_name=${RELEASE} \
         -e container_namespace=${RELEASE_OR_MASTER_IMAGES} \
@@ -295,7 +307,7 @@ deploy_overcloud() {
 install_vbmc() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${ANSIBLE_HOSTS}  \
+        -i ${UNDERCLOUD_HOSTS}  \
         playbooks/deploy_vbmc.yml
     popd
 }
@@ -303,7 +315,7 @@ install_vbmc() {
 pre_undercloud() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
-        -i ${ANSIBLE_HOSTS}  \
+        -i ${UNDERCLOUD_HOSTS}  \
         playbooks/pre_undercloud.yml
     popd
 }
@@ -314,19 +326,19 @@ main() {
     INFRARED_CMDS="cleanup_infrared install_infrared"
     VMS_CMDS="rebuild_vms build_hosts"
     UNDERCLOUD_CMDS="download_images install_vbmc pre_undercloud deploy_undercloud"
-    OVERCLOUD_CMDS="gen_ssh_key setup_vlan create_instackenv tune_undercloud introspect_nodes create_flavors build_heat_config prepare_containers run_deploy_overcloud"
+    OVERCLOUD_TAGS="gen_ssh_key setup_vlan create_instackenv tune_undercloud introspect_nodes create_flavors build_heat_config prepare_containers run_deploy_overcloud"
 
     CMDS="$@"
 
     DEPLOY_OVERCLOUD_TAGS=""
-    for tag in ${OVERCLOUD_CMDS}; do
+    for tag in ${OVERCLOUD_TAGS}; do
         if [[ "${CMDS}" == *"${tag}"* ]]; then
             DEPLOY_OVERCLOUD_TAGS="${tag},${DEPLOY_OVERCLOUD_TAGS}"
         fi
     done
 
     if [[ "${DEPLOY_OVERCLOUD_TAGS}" != "" ]]; then
-        CMDS="${CMDS} deploy_overcloud"
+        CMDS="${CMDS} ${OVERCLOUD_CMDS}"
     fi
 
     if [[ "${CMDS}" == *"setup_infrared"* ]]; then
@@ -377,7 +389,7 @@ main() {
         echo    "install the overcloud. The subcommands here are actually "
         echo    "ansible tags that can also be specified to exclude the "
         echo    "others.   Sub-commands (tags) include:"
-        for cmd in ${OVERCLOUD_CMDS}; do
+        for cmd in ${OVERCLOUD_TAGS}; do
             echo "   - $cmd"
         done
         exit
@@ -428,6 +440,7 @@ main() {
     if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
      deploy_overcloud
     fi
+
 }
 
 main "$@"
