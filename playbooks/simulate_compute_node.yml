@@ -1,10 +1,6 @@
-- name: Gather facts for Hypervisor and undercloud
-  hosts: hypervisor, undercloud
-  gather_facts: yes
-  any_errors_fatal: true
-
 - hosts: overcloud_nodes
   gather_facts: no
+  become: yes
   tasks:
     - name: turn off rp filter on overcloud nodes
       shell: |

@@ -1,15 +1,23 @@
 # this runs on hypervisor, using hosts file that is infrared-specific
 
+- name: config
+  include_vars: "{{ playbook_dir }}/../config.yml"
+
+
 # e.g.
 # ip route add 10.0.10.0/24 via 192.168.22.33
 - name: add route on hypervisor to vlan10 / external network via undercloud
   shell: |
+    if [[ $( ip route show {{ external_network_cidr }} ) ]]; then
+      ip route del {{ external_network_cidr }}
+    fi
     ip route add {{ external_network_cidr }} via {{ hostvars[groups['undercloud'][0]]['ansible_host'] }}
 
 - name: ensure docker installed
   package:
       name:
         - docker
+        - python-docker
 
 - name: enable and start docker
   systemd:
@@ -38,15 +46,6 @@
   copy:
     src: "Dockerfile"
     dest: "/usr/local/dockerbuilds/compute_node/Dockerfile"
-
-# note delorean_url is passed to ansible as a -e variable
-- name: go get the delorean files we care about
-  shell: |
-      curl -O {{ delorean_url }}
-      curl -O {{ delorean_deps_url }}
-  args:
-    chdir:
-      /etc/yum.repos.d/
 
 - name: create docker image
   docker_image:
