@@ -1,0 +1,20 @@
+- name: Gather facts for Hypervisor and undercloud
+  hosts: hypervisor, undercloud
+  gather_facts: yes
+  any_errors_fatal: true
+
+- hosts: overcloud_nodes
+  gather_facts: no
+  tasks:
+    - name: turn off rp filter on overcloud nodes
+      shell: |
+        for i in /proc/sys/net/ipv4/conf/*/rp_filter ; do
+          echo 0 > $i
+        done
+
+- name: deploy compute containers
+  hosts: hypervisor
+  become: yes
+  roles:
+    - {role: simulate-compute-node, tags: ['simulate_compute_node']}
+

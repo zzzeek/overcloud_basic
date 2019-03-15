@@ -29,6 +29,7 @@ RELEASE=rocky
 RELEASE_OR_MASTER_DLRN=rocky
 BUILD=current-tripleo-rdo
 DLRN="https://trunk.rdoproject.org/centos7-${RELEASE_OR_MASTER_DLRN}/${BUILD}/delorean.repo"
+DLRN_DEPS="https://trunk.rdoproject.org/centos7-${RELEASE_OR_MASTER_DLRN}/delorean-deps.repo"
 
 # options here:
 #BUILD=current-tripleo-rdo-internal    most tested / oldest
@@ -304,6 +305,17 @@ deploy_overcloud() {
 
 }
 
+simulate_compute_node() {
+    pushd ${SCRIPT_HOME}
+    ${ANSIBLE_PLAYBOOK} -vv \
+        -i ${OVERCLOUD_HOSTS} \
+        -e delorean_url=${DLRN} \
+        -e delorean_deps_url=${DLRN_DEPS} \
+        playbooks/simulate_compute_node.yml
+    popd
+}
+
+
 install_vbmc() {
     pushd ${SCRIPT_HOME}
     ${ANSIBLE_PLAYBOOK} -vv \
@@ -395,6 +407,8 @@ main() {
         for cmd in ${OVERCLOUD_TAGS}; do
             echo "   - $cmd"
         done
+        echo -e "\nsimulate_compute_node - runs ansible playbook that will "
+        echo    "run fake compute nodes from hypervisor-based docker containers"
         exit
     fi
 
@@ -442,6 +456,10 @@ main() {
 
     if [[ "${CMDS}" == *"deploy_overcloud"* ]]; then
      deploy_overcloud
+    fi
+
+    if [[ "${CMDS}" == *"simulate_compute_node"* ]]; then
+      simulate_compute_node
     fi
 
 }

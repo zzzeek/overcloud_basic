@@ -1,0 +1,60 @@
+# this runs on hypervisor, using hosts file that is infrared-specific
+
+# e.g.
+# ip route add 10.0.10.0/24 via 192.168.22.33
+- name: add route on hypervisor to vlan10 / external network via undercloud
+  shell: |
+    ip route add {{ external_network_cidr }} via {{ hostvars[groups['undercloud'][0]]['ansible_host'] }}
+
+- name: ensure docker installed
+  package:
+      name:
+        - docker
+
+- name: enable and start docker
+  systemd:
+    name: docker
+    enabled: yes
+    daemon_reload: yes
+    state: started
+
+- name: create docker network bridge
+  docker_network:
+    driver: bridge
+    state: present
+    name: compute_nodes
+    driver_options:
+      com.docker.network.bridge.name: compute_net
+    ipam_options:
+      subnet: '172.18.0.0/16'
+      gateway: '172.18.0.1'
+
+- name: create docker build location
+  file:
+    path: "/usr/local/dockerbuilds/compute_node"
+    state: directory
+
+- name: copy Dockerfile etc to docker build location
+  copy:
+    src: "Dockerfile"
+    dest: "/usr/local/dockerbuilds/compute_node/Dockerfile"
+
+# note delorean_url is passed to ansible as a -e variable
+- name: go get the delorean files we care about
+  shell: |
+      curl -O {{ delorean_url }}
+      curl -O {{ delorean_deps_url }}
+  args:
+    chdir:
+      /etc/yum.repos.d/
+
+- name: create docker image
+  docker_image:
+    name: compute_node
+    path: "/usr/local/dockerbuilds/compute_node/"
+    force: yes
+    buildargs:
+      delorean_url: "{{ delorean_url }}"
+      delorean_deps_url: "{{ delorean_deps_url }}"
+
+      foo: "bar"
