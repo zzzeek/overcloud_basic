@@ -339,6 +339,9 @@ main() {
 
     if [[ "${DEPLOY_OVERCLOUD_TAGS}" != "" ]]; then
         CMDS="${CMDS} ${OVERCLOUD_CMDS}"
+    else
+        # no tags set up, so default to all of them
+        DEPLOY_OVERCLOUD_TAGS="all"
     fi
 
     if [[ "${CMDS}" == *"setup_infrared"* ]]; then
