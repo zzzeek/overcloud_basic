@@ -1,80 +1,67 @@
-===============
-stretch cluster
-===============
+===================================
+build an overcloud + then do things
+===================================
 
-Builds two HA/Pacemaker overclouds with a Galera cluster streched between
-them which is then used by Keystone for shared identity service.
+Script / playbooks to deploy a libvirt based overcloud using Infrared for
+the virsh + undercloud portion, then a playbook adapted from infrared +
+tripleo quickstart to build out the overcloud.   From there, custom playbooks
+can be invoked to modify the setup.
 
-Originally, this process involved building the two overclouds separately
-then configuring a new Galera cluster on top of them.  It has evolved so
-that first the additional Galera cluster would be part of tripleo, but
-still using a separate "merge" step, and now finally to tripleo is patched
-to completely deploy two overclouds, where the second one builds right on
-top of the existing stretched Galera cluster.
-
-Blueprint for the feature being developed at:
-
-https://review.openstack.org/#/c/600555/
-
-Requirements
-============
-
-This demo runs ten VMs simultaneously, so lots of RAM as well as sufficient
-disk space (by default on the /home partition).   I run on a server
-w/ 188G of physical RAM and 8 CPU cores (more would be better).
-
-General Things
-==============
-
-Currently running RDO/Queens Pacemaker / HA (three controller nodes) and we are
-also using Docker containers for overcloud services.
-
-The VMs and the undercloud deployment is invoked using Infrared.   Then an
-overcloud is deployed from each undercloud using custom Ansible scripts that
-are derived from some tripleo-quickstart and some infrared concepts together.
-The overcloud nodes use the undercloud as their gateway, and the undercloud
-nodes then send packets between the two overclouds using an additional libvirt
-network connecting them.
-
-The two overclouds are deployed with Keystone interacting with a separate
-Galera database called the "stretch", or "global" database that is shared
-as one Galera cluster over both overclouds.
-
-
-The demo patches tripleo-heat-templates, puppet-
-tripleo with the ability to deploy an addtional Galera cluster.  It
-also patches the galera docker image and the controller image
-a modified version of the Galera resource agent.
+The first playbook I'm working on for that is a "simulate compute node"
+playbook that spins up additional compute nodes as docker containers
+on the hypervisor, using the Nova fake virt driver.
 
 Invocation
 ==========
 
-The whole thing can run from a single script run.   The script should be run
-from where it sits, so a hypothetical "do everything" looks like::
+The "deploy.sh" script deploys the full system using commands that link
+to infrared commands and ansible runs::
 
-    $ git clone https://github.com/zzzeek/stretch_cluster/
-    $ cd stretch_cluster
-    $ STACKS="stack1 stack2" ./deploy.sh
+  usage: ./deploy.sh <commands>
 
-The STACKS variable refers to two names, "stack1" and "stack2", which refer
-to the two overclouds.   Some parts of the script are able to run
-against only one stack at a time, if desired.
+  commands and/or subcommands can be specified in any order, and are run
+  in their order of dependency.   The below sections illustrate
+  top level commands that each run a whole section of subcommands,
+  as well as the listing of individual subcommands.  All are in
+  order of dependency:
 
-Breaking down the build further, we can run individual steps::
+  - setup_infrared - ensures infrared is installed
+  in a virtual environment here in the current directory
+  and our own network / VM templates are added. Includes the
+  following subcommands:
+     - cleanup_infrared
+     - install_infrared
 
-  # tear down any infrared checkout, build a new infrared checkout, download
-  # overcloud qcow images to a local directory
-  $ CMDS="cleanup_infrared setup_infrared download_images" ./deploy.sh
+  - setup_vms - uses infrared to build the libvirt networks
+  and VMs for the undercloud / overcloud.  Includes the
+  following subcommands:
+     - rebuild_vms
+     - build_hosts
 
-  # build out all ten VMs using infrared virsh
-  $ CMDS="rebuild_vms" ./deploy.sh
+  install_undercloud - runs some undercloud setup steps that
+  we've ported and modified from infrared, and then uses
+  infrared to run the final undercloud deploy. Includes the
+  following subcommands:
+     - download_images
+     - install_vbmc
+     - pre_undercloud
+     - deploy_undercloud
 
-  # deploy underclouds on both stacks, build out a new hosts file that
-  # will be used for subsequent ansible roles, set up routing between
-  # the two overclouds
-  $ STACKS="stack1 stack2" CMDS="build_hosts deploy_undercloud setup_routes" ./deploy.sh
+  deploy_overcloud - runs our own overcloud playbook to
+  install the overcloud. The subcommands here are actually
+  ansible tags that can also be specified to exclude the
+  others.   Sub-commands (tags) include:
+     - gen_ssh_key
+     - setup_vlan
+     - create_instackenv
+     - tune_undercloud
+     - introspect_nodes
+     - create_flavors
+     - build_heat_config
+     - prepare_containers
+     - run_deploy_overcloud
 
-  # configure and deploy overclouds on both stacks
-  $ STACKS="stack1 stack2" CMDS="deploy_overcloud" ./deploy.sh
+  simulate_compute_node - runs ansible playbook that will
+  run fake compute nodes from hypervisor-based docker containers
 
 
