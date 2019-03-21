@@ -12,6 +12,9 @@ RUN \
 	curl -O ${delorean_url} && \
     curl -O ${delorean_deps_url}
 
-# start small :)
+RUN \
+   yum install -y openstack-nova-compute openstack-nova-migration openstack-neutron-ml2 openstack-neutron-openvswitch openstack-neutron-fwaas openstack-neutron
 
-ENTRYPOINT ["bash"]
+COPY ./hosts /etc/hosts
+
+# start small :)

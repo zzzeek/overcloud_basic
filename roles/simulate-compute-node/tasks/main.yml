@@ -47,6 +47,22 @@
     src: "Dockerfile"
     dest: "/usr/local/dockerbuilds/compute_node/Dockerfile"
 
+- name:  write hosts file
+  copy: 
+    content: "{{ hostvars['compute-0']['compute_hosts'] }}" 
+    dest: /usr/local/dockerbuilds/compute_node/hosts
+
+- name: write config tar.gz
+  copy:
+    src: /tmp/compute_config.tar.gz
+    dest: /usr/local/dockerbuilds/compute_node/compute_config.tar.gz
+
+- name: untar config
+  shell: |
+    cd /usr/local/dockerbuilds/compute_node
+    tar -xf compute_config.tar.gz
+
+
 - name: create docker image
   docker_image:
     name: compute_node

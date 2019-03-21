@@ -8,7 +8,30 @@
           echo 0 > $i
         done
 
+- hosts: compute-0
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: get the hosts file from a compute node
+      slurp:
+        src: /etc/hosts
+      register: compute_hosts_slurp
+    - set_fact:
+        compute_hosts: "{{ compute_hosts_slurp['content'] | b64decode }}"
+
+    - name: tar up all the conf from a compute node
+      shell: |
+        cd /var/lib/config-data/puppet-generated/
+        tar -czf /tmp/compute_config.tar.gz nova_libvirt neutron
+
+    - name: fetch
+      fetch:
+        flat: yes
+        src: /tmp/compute_config.tar.gz
+        dest: /tmp/compute_config.tar.gz
+    
 - name: deploy compute containers
+  gather_facts: no
   hosts: hypervisor
   become: yes
   roles:
