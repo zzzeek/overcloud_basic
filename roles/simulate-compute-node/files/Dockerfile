@@ -24,13 +24,15 @@ COPY ./neutron.conf.fragment /etc/neutron
 
 VOLUME /etc/nova/original
 VOLUME /etc/neutron/original
-VOLUME /etc/hosts
+
+# we want to mount /etc/hosts_compute as a file
+# VOLUME /etc/hosts_compute
 
 COPY ./write_config.py /write_config.py
 COPY ./entrypoint.sh /entrypoint.sh
 
 RUN \
-	chmod 0755 /write_config.sh /entrypoint.sh
+	chmod 0755 /write_config.py /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 

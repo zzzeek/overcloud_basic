@@ -1,15 +1,31 @@
 #!/bin/bash
 
 MY_IP=$( hostname -i )
+MY_HOSTNAME=$( hostname )
+
+WRITE_CONF="/write_config.py -e container_ip=${MY_IP} -e container_hostname=${MY_HOSTNAME}"
+
+if [ ! -f /etc/hosts.docker ]; then
+    cp /etc/hosts /etc/hosts.docker
+fi
+
+cp /etc/hosts.docker /etc/hosts
+cat /etc/hosts_compute >> /etc/hosts
 
 pushd /etc/nova
-/write_config.sh -e "my_ip=${MY_IP}" nova.conf.fragment original/nova.conf nova.conf
+${WRITE_CONF} nova.conf.fragment original/nova.conf nova.conf
 popd
 
 pushd /etc/neutron
-/write_config.sh -e "my_ip=${MY_IP}" neutron.conf.fragment original/neutron.conf neutron.conf
+${WRITE_CONF} neutron.conf.fragment original/neutron.conf neutron.conf
 popd
 
-nova_compute &
+nova-compute &
 
 # run other services here
+
+while [ 1 ] ; do
+  sleep 1
+done
+
+

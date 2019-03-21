@@ -1,5 +1,4 @@
 [DEFAULT]
-# provided via env variable
-# my_ip=%(my_ip)s
+my_ip=%(container_ip)s
+host=%(container_hostname)s
 compute_driver=fake.FakeDriver
-host=''

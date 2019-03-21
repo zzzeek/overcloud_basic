@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+import io
 import re
 import sys
 
@@ -16,7 +17,8 @@ def main(argv=None):
     parser.add_argument(
         "-e",
         action="append",
-        help="Substitution variable, e.g. -e 'my_ip=172.18.0.10' -e 'foo=bar'",
+        help="Substitution variable, e.g. -e 'my_ip=172.18.0.10' -e 'foo=bar'.  "
+        "Hard-substitutes into files named '<filename>.fragment', otherwise is not used.",
     )
     parser.add_argument(
         "src",
@@ -27,21 +29,33 @@ def main(argv=None):
     parser.add_argument("dest", type=str, help="Destination file")
     args = parser.parse_args()
 
-    environment_defaults = {
-        m.group(1): m.group(2)
-        for m in [
-            re.match(r'([\w_]+)\s*=\s*(.*)', env)
-            for env in args.e
-        ] if m
-    }
+    if args.e:
+        environment_defaults = {
+            m.group(1): m.group(2)
+            for m in [
+                re.match(r'([\w_]+)\s*=\s*(.*)', env)
+                for env in args.e
+            ] if m
+        }
+    else:
+        environment_defaults = {}
 
-    config = configparser.ConfigParser(environment_defaults)
+    config = configparser.RawConfigParser()
 
     for src_file in reversed(args.src):
-        config.read(src_file)
+        if src_file.endswith(".fragment"):
+            # don't use configparser interpolation, since services don't use it
+            # and configparser.write() doesn't expand them;
+            # instead, hard-interpolate the contents before adding to the config,
+            # and only with our .fragment files that don't have lots of templated
+            # stuff and comments in them
+            with open(src_file) as file_:
+                contents = file_.read()
+                contents = contents % environment_defaults
+            config.readfp(io.BytesIO(contents))
+        else:
+            config.read(src_file)
 
-    import pdb
-    pdb.set_trace()
     with open(args.dest, "w") as file_:
         config.write(file_)
 
