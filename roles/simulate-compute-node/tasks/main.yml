@@ -13,6 +13,16 @@
     fi
     ip route add {{ external_network_cidr }} via {{ hostvars[groups['undercloud'][0]]['ansible_host'] }}
 
+- name: add route on hypervisor to vlan20 / internal network via undercloud
+  shell: |
+    if [[ $( ip route show {{ internal_network_cidr }} ) ]]; then
+      ip route del {{ internal_network_cidr }}
+    fi
+    ip route add {{ internal_network_cidr }} via {{ hostvars[groups['undercloud'][0]]['ansible_host'] }}
+
+# TODO: figure out who is adding lots of iptables REJECT rules to the hypervisor
+
+
 - name: ensure docker installed
   package:
       name:
@@ -29,6 +39,12 @@
 - name: create docker network bridge
   docker_network:
     driver: bridge
+    # leave masquerade on - control plane will see packets
+    # routed from external libvirt network 192.168.22.0 rather
+    # than docker network 172.18.0.0 and this seems to help w/
+    # packets on the 10.0.20.0 network 
+    #driver_options:
+    #  com.docker.network.bridge.enable_ip_masquerade: false
     state: present
     name: compute_nodes
     driver_options:
@@ -89,6 +105,7 @@
     restart_policy: always
     recreate: yes
     purge_networks: yes
+    hostname: "{{ item | replace('_', '-') }}"
     networks:
       - name: compute_nodes    
     volumes:
