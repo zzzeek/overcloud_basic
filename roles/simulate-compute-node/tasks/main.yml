@@ -11,16 +11,15 @@
     if [[ $( ip route show {{ external_network_cidr }} ) ]]; then
       ip route del {{ external_network_cidr }}
     fi
-    ip route add {{ external_network_cidr }} via {{ hostvars[groups['undercloud'][0]]['ansible_host'] }}
+    ip route add {{ external_network_cidr }} via 192.168.22.1
 
 - name: add route on hypervisor to vlan20 / internal network via undercloud
   shell: |
-    if [[ $( ip route show {{ internal_network_cidr }} ) ]]; then
-      ip route del {{ internal_network_cidr }}
+    if [[ $( ip route show {{ internalapi_network_cidr }} ) ]]; then
+      ip route del {{ internalapi_network_cidr }}
     fi
-    ip route add {{ internal_network_cidr }} via {{ hostvars[groups['undercloud'][0]]['ansible_host'] }}
+    ip route add {{ internalapi_network_cidr }} via 192.168.22.1
 
-# TODO: figure out who is adding lots of iptables REJECT rules to the hypervisor
 
 
 - name: ensure docker installed

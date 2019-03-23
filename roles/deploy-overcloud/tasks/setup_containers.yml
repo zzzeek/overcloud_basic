@@ -31,8 +31,8 @@
           openstack tripleo container image prepare
           --output-env-file {{ working_dir }}/containers-default-parameters.yaml
           -e {{ working_dir }}/tripleo-config-generated-env-files/containers-prepare-parameter.yaml
-      retries: 3
-      delay: 5
+      retries: 10 
+      delay: 30
       register: result
       until: result.rc == 0
 
