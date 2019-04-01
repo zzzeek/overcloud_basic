@@ -27,6 +27,11 @@
   roles:
     - {role: simulate-compute-node, tags: ['simulate_compute_node']}
 
+- name: discover cells hosts
+  hosts: controller-0
+  gather_facts: no
+  become: yes
+  tasks:
+    - shell: |
+        docker exec nova_api nova-manage cell_v2 discover_hosts
 
-# ADDITIOANL ON A CONTORLLER - each time new compute nodes are added run this:
-# [root@overcloud-controller-0 heat-admin]# docker exec nova_api nova-manage cell_v2 discover_hosts

@@ -1,0 +1,4 @@
+[ovs]
+local_ip=%(container_ip)s
+
+

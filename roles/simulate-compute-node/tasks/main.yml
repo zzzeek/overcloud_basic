@@ -97,21 +97,30 @@
 # the container has to have just the one IP address on 172.18.0.0/16
 # so purge_networks ensures this.   otherwise need to use ip route with
 # grepping/ sed to get the correct ip number
-- name: run five compute nodes
+- name: run a series of compute nodes
   docker_container:
     image: compute_node
-    name: "{{ item }}"
+    name: "{{ container_name }}"
     restart_policy: always
     recreate: yes
     purge_networks: yes
-    hostname: "{{ item | replace('_', '-') }}"
+    capabilities:
+      - ALL
+      - NET_ADMIN
+      - SYS_ADMIN
+    privileged: yes
+    hostname: "{{ hostname }}"
     networks:
       - name: compute_nodes    
     volumes:
       - "/usr/local/dockerbuilds/compute_node/hosts:/etc/hosts_compute:ro"
       - "/usr/local/dockerbuilds/compute_node/neutron/etc/neutron:/etc/neutron/original:ro"
       - "/usr/local/dockerbuilds/compute_node/nova_libvirt/etc/nova:/etc/nova/original/:ro"
-  with_items: ["fake_node_1", "fake_node_2", "fake_node_3", "fake_node_4", "fake_node_5"]
+  vars:
+    container_name: "fake_node_{{ item }}"
+    hostname: "fake-node-{{ item }}"
+  with_sequence: start=1 end=5
+
   
 # the command using docker looks like:
 # docker run -d  --network compute_nodes -v "/usr/local/dockerbuilds/compute_node/hosts:/etc/hosts_compute:ro" -v "/usr/local/dockerbuilds/compute_node/neutron/etc/neutron:/etc/neutron/original:ro" -v "/usr/local/dockerbuilds/compute_node/nova_libvirt/etc/nova:/etc/nova/original/:ro" compute_node

@@ -5,7 +5,7 @@ ARG delorean_deps_url
 
 
 RUN \
-	yum install -y tcpdump iproute
+	yum install -y tcpdump iproute net-tools
 
 RUN \
 	cd /etc/yum.repos.d/ && \
