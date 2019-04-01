@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -x
 DEVICE=eth0
 MY_MACADDR=$( ip addr show ${DEVICE} | grep -Po 'link/ether \K[\da-f:]+'  )
 MY_IP=$( ip addr show ${DEVICE} | grep -Po 'inet \K[\d.]+'  )
@@ -28,7 +29,7 @@ mkdir /var/run/openvswitch
 chown openvswitch:hugetlbfs /var/run/openvswitch/
 sudo -u openvswitch ovsdb-tool create
 ovsdb-server /etc/openvswitch/conf.db -vconsole:emer -vsyslog:err -vfile:info --remote "ptcp:6640:127.0.0.1" --remote=punix:/var/run/openvswitch/db.sock --private-key=db:Open_vSwitch,SSL,private_key --certificate=db:Open_vSwitch,SSL,certificate --bootstrap-ca-cert=db:Open_vSwitch,SSL,ca_cert --user openvswitch:hugetlbfs --no-chdir --log-file=/var/log/openvswitch/ovsdb-server.log --pidfile=/var/run/openvswitch/ovsdb-server.pid --detach
-ovs-vsctl set-manager "ptcp:6640:127.0.0.1"
+# ovs-vsctl set-manager "ptcp:6640:127.0.0.1"
 ovs-vswitchd unix:/var/run/openvswitch/db.sock -vconsole:emer -vsyslog:err -vfile:info --mlockall --user openvswitch:hugetlbfs --no-chdir --log-file=/var/log/openvswitch/ovs-vswitchd.log --pidfile=/var/run/openvswitch/ovs-vswitchd.pid --detach
 
 # TODO: ip address on the bridge?

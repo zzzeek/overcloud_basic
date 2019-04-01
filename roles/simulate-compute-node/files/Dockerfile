@@ -18,7 +18,8 @@ RUN \
 # copy partial conf files to their /etc/ locations.  the write_config.py
 # script uses these to merge into a real conf file.
 COPY ./nova.conf.fragment /etc/nova/
-COPY ./neutron.conf.fragment /etc/neutron
+COPY ./neutron.conf.fragment /etc/neutron/
+COPY ./openvswitch_agent.ini.fragment /etc/neutron/
 # etc
 
 

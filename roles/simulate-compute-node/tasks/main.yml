@@ -67,6 +67,7 @@
     - "write_config.py"
     - "neutron.conf.fragment"
     - "nova.conf.fragment"
+    - "openvswitch_agent.ini.fragment"
 
 - name:  write hosts file
   copy: 
@@ -106,9 +107,7 @@
     purge_networks: yes
     capabilities:
       - ALL
-      - NET_ADMIN
-      - SYS_ADMIN
-    privileged: yes
+      # - NET_ADMIN
     hostname: "{{ hostname }}"
     networks:
       - name: compute_nodes    
@@ -119,7 +118,7 @@
   vars:
     container_name: "fake_node_{{ item }}"
     hostname: "fake-node-{{ item }}"
-  with_sequence: start=1 end=5
+  with_sequence: start=1 end=2
 
   
 # the command using docker looks like:
