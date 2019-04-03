@@ -15,6 +15,12 @@ fi
 cp /etc/hosts.docker /etc/hosts
 cat /etc/hosts_compute >> /etc/hosts
 
+# patch fake virt driver script into nova installation location
+NOVA_VIRT_PATH=$( python -c "import os; from nova import virt; print(os.path.dirname(virt.__file__))" )
+cp /fake_vif.py ${NOVA_VIRT_PATH}/
+
+
+
 pushd /etc/nova
 ${WRITE_CONF} nova.conf.fragment original/nova.conf nova.conf
 popd

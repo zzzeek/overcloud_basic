@@ -41,7 +41,7 @@
     # leave masquerade on - control plane will see packets
     # routed from external libvirt network 192.168.22.0 rather
     # than docker network 172.18.0.0 and this seems to help w/
-    # packets on the 10.0.20.0 network 
+    # packets on the 10.0.20.0 network
     #driver_options:
     #  com.docker.network.bridge.enable_ip_masquerade: false
     state: present
@@ -65,13 +65,14 @@
     - "Dockerfile"
     - "entrypoint.sh"
     - "write_config.py"
+    - "fake_vif.py"
     - "neutron.conf.fragment"
     - "nova.conf.fragment"
     - "openvswitch_agent.ini.fragment"
 
 - name:  write hosts file
-  copy: 
-    content: "{{ hostvars['compute-0']['compute_hosts'] }}" 
+  copy:
+    content: "{{ hostvars['compute-0']['compute_hosts'] }}"
     dest: /usr/local/dockerbuilds/compute_node/hosts
 
 - name: write config tar.gz
@@ -110,7 +111,7 @@
       # - NET_ADMIN
     hostname: "{{ hostname }}"
     networks:
-      - name: compute_nodes    
+      - name: compute_nodes
     volumes:
       - "/usr/local/dockerbuilds/compute_node/hosts:/etc/hosts_compute:ro"
       - "/usr/local/dockerbuilds/compute_node/neutron/etc/neutron:/etc/neutron/original:ro"
@@ -120,7 +121,7 @@
     hostname: "fake-node-{{ item }}"
   with_sequence: start=1 end=2
 
-  
+
 # the command using docker looks like:
 # docker run -d  --network compute_nodes -v "/usr/local/dockerbuilds/compute_node/hosts:/etc/hosts_compute:ro" -v "/usr/local/dockerbuilds/compute_node/neutron/etc/neutron:/etc/neutron/original:ro" -v "/usr/local/dockerbuilds/compute_node/nova_libvirt/etc/nova:/etc/nova/original/:ro" compute_node
 #
