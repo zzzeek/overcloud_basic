@@ -1,0 +1,11 @@
+diff --git a/plugins/tripleo-undercloud/setup_packages.yml b/plugins/tripleo-undercloud/setup_packages.yml
+index fd7b3da..a408bca 100644
+--- a/plugins/tripleo-undercloud/setup_packages.yml
++++ b/plugins/tripleo-undercloud/setup_packages.yml
+@@ -180,5 +180,5 @@
+ 
+       - name: install the oscplugin/tripleO client
+         package:
+-            name: "{{ (install.version|openstack_release == 7) | ternary('python-rdomanager-oscplugin', (install.version|openstack_release < 15) | ternary('python-tripleoclient', 'python3-tripleoclient')) }}"
++            name: python-tripleoclient
+             state: present

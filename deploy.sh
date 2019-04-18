@@ -23,10 +23,10 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 UNDERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
 OVERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_overcloud
 
-RELEASE=rocky
+RELEASE=stein
 
 # this token goes into the URL as follows:
-RELEASE_OR_MASTER_DLRN=rocky
+RELEASE_OR_MASTER_DLRN=stein
 BUILD=current-tripleo-rdo
 DLRN="https://trunk.rdoproject.org/centos7-${RELEASE_OR_MASTER_DLRN}/${BUILD}/delorean.repo"
 DLRN_DEPS="https://trunk.rdoproject.org/centos7-${RELEASE_OR_MASTER_DLRN}/delorean-deps.repo"
@@ -40,7 +40,7 @@ DLRN_DEPS="https://trunk.rdoproject.org/centos7-${RELEASE_OR_MASTER_DLRN}/delore
 
 
 # this token is for the images.rdoproject.org link
-RELEASE_OR_MASTER_IMAGES=rocky/rdo_trunk
+RELEASE_OR_MASTER_IMAGES=${RELEASE}/rdo_trunk
 # RELEASE_OR_MASTER_IMAGES=queens/delorean
 # RELEASE_OR_MASTER_IMAGES=master/delorean
 # etc
