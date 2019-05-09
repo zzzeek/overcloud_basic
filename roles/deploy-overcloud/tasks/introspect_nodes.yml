@@ -1,11 +1,18 @@
-- name: run zaqar workaround
+# this is the workaround pre https://review.openstack.org/#/c/642374/
+- name: run zaqar workaround #1
   shell: |
     cp cm-local-ca.pem cm-local-ca.pem.savd
     cp undercloud-cacert.pem cm-local-ca.pem
   become: yes
   args:
     chdir: /etc/pki/ca-trust/source/anchors
- 
+
+# this is the workaround post https://review.openstack.org/#/c/642374/1
+- name: run zaqar workaround #2
+  lineinfile:
+    line: 'export OS_CACERT="/etc/pki/ca-trust/source/anchors/undercloud-cacert.pem"'
+    path: "{{ working_dir }}/stackrc"
+
 - name: remove existing nodes
   shell: |
       source {{ working_dir }}/stackrc
