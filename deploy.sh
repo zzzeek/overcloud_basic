@@ -4,7 +4,7 @@ DIRNAME=`dirname $0`
 SCRIPT_HOME=`realpath $DIRNAME`
 DISK_POOL=/home/infrared_images
 
-COMPUTE_SCALE="3"
+COMPUTE_SCALE="1"
 
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 NTP_SERVER="clock.corp.redhat.com"
@@ -23,7 +23,12 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 UNDERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
 OVERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_overcloud
 
-RELEASE=stein
+# RHEL_OR_RDO='rdo'
+# RELEASE=stein
+
+RHEL_OR_RDO='rhel'
+RELEASE=15
+
 
 # this token goes into the URL as follows:
 RELEASE_OR_MASTER_DLRN=stein
@@ -148,6 +153,10 @@ setup_infrared_env() {
 
 
 download_images() {
+    if [ "${RHEL_OR_RDO}" == 'rhel' ]; then
+        return
+    fi
+
     mkdir -p ${OVERCLOUD_IMAGES}/${RELEASE}
     pushd ${OVERCLOUD_IMAGES}/${RELEASE}
 
@@ -242,13 +251,19 @@ build_vms() {
     # problem?  make sure to use public-images with undercloud
     #    --image-url https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 \
 
+    if [ "${RHEL_OR_RDO}" == 'rdo' ]; then
+        QCOW_URL="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
+    else
+        QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8/compose/BaseOS/x86_64/images/rhel-guest-image-8.1-43.x86_64.qcow2"
+    fi
+
     infrared_cmd virsh -vv \
         --disk-pool="${DISK_POOL}" \
         --topology-nodes="${NODES}" \
         --topology-network=zzzeek_networks \
         --topology-extend=yes \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2 \
-        --image-url https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 \
+        --image-url "${QCOW_URL}" \
 
 }
 
@@ -275,15 +290,18 @@ deploy_undercloud() {
     LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/hosts-prov
     WRITE_HOSTFILE=${UNDERCLOUD_HOSTS}
 
+    if [ "${RHEL_OR_RDO}" == 'rhel' ]; then
+        UNDERCLOUD_OPTS="--images-task rpm"
+    else
+        UNDERCLOUD_OPTS="-e rr_use_public_repos=true -e rr_release_name=${RELEASE_OR_MASTER_DLRN} --images-task import --image-url ${IMAGE_URL}"
+
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
-        --build ${BUILD} \
-        -e rr_use_public_repos=true \
-        -e rr_release_name=${RELEASE_OR_MASTER_DLRN} \
+        ${UNDERCLOUD_OPTS}
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
         --config-options DEFAULT.undercloud_ntp_servers="${NTP_SERVER}" \
-        --images-task import --images-url ${IMAGE_URL}
+    fi
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
     write_overcloud_hosts
