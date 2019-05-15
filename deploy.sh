@@ -27,7 +27,7 @@ OVERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_overcloud
 # RELEASE=stein
 
 RHEL_OR_RDO='rhel'
-RELEASE=15
+RELEASE="15-trunk"
 
 
 # this token goes into the URL as follows:
@@ -254,7 +254,8 @@ build_vms() {
     if [ "${RHEL_OR_RDO}" == 'rdo' ]; then
         QCOW_URL="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
     else
-        QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8/compose/BaseOS/x86_64/images/rhel-guest-image-8.1-43.x86_64.qcow2"
+	QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8.0/compose/BaseOS/x86_64/images/rhel-guest-image-8.0-1854.x86_64.qcow2"
+        #QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8/compose/BaseOS/x86_64/images/rhel-guest-image-8.1-43.x86_64.qcow2"
     fi
 
     infrared_cmd virsh -vv \
@@ -295,7 +296,7 @@ deploy_undercloud() {
     WRITE_HOSTFILE=${UNDERCLOUD_HOSTS}
 
     if [ "${RHEL_OR_RDO}" == "rhel" ]; then
-        UNDERCLOUD_OPTS="--images-task rpm"
+        UNDERCLOUD_OPTS="--images-task rpm --enable-testing-repos all"
     else
         UNDERCLOUD_OPTS="-e rr_use_public_repos=true -e rr_release_name=${RELEASE_OR_MASTER_DLRN} --images-task import --image-url ${IMAGE_URL}"
     fi
