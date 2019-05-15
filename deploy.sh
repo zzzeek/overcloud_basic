@@ -263,7 +263,7 @@ build_vms() {
         --topology-network=zzzeek_networks \
         --topology-extend=yes \
         --host-key $HOME/.ssh/id_rsa  --host-address=127.0.0.2 \
-        --image-url "${QCOW_URL}" \
+        --image-url "${QCOW_URL}"
 
 }
 
@@ -279,6 +279,10 @@ write_overcloud_hosts() {
 
 
 upload_images() {
+    if [ "${RHEL_OR_RDO}" == "rhel" ]; then
+        return
+    fi
+
     pushd ${INFRARED_CHECKOUT}
     scp -F ${INFRARED_WORKSPACE}/ansible.ssh.config ${OVERCLOUD_IMAGES}/${RELEASE}/* undercloud-0:/tmp/
     popd
@@ -290,18 +294,18 @@ deploy_undercloud() {
     LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/hosts-prov
     WRITE_HOSTFILE=${UNDERCLOUD_HOSTS}
 
-    if [ "${RHEL_OR_RDO}" == 'rhel' ]; then
+    if [ "${RHEL_OR_RDO}" == "rhel" ]; then
         UNDERCLOUD_OPTS="--images-task rpm"
     else
         UNDERCLOUD_OPTS="-e rr_use_public_repos=true -e rr_release_name=${RELEASE_OR_MASTER_DLRN} --images-task import --image-url ${IMAGE_URL}"
+    fi
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
         --inventory=${LIMIT_HOSTFILE} \
-        ${UNDERCLOUD_OPTS}
+        ${UNDERCLOUD_OPTS} \
         --config-options DEFAULT.enable_telemetry=false \
         --config-options DEFAULT.undercloud_nameservers="${NAMESERVERS}" \
-        --config-options DEFAULT.undercloud_ntp_servers="${NTP_SERVER}" \
-    fi
+        --config-options DEFAULT.undercloud_ntp_servers="${NTP_SERVER}"
 
     cp ${INFRARED_WORKSPACE}/hosts ${WRITE_HOSTFILE}
     write_overcloud_hosts
