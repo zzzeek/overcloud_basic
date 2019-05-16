@@ -8,6 +8,7 @@
 # mistral environment-delete overcloud
 # swift delete --all
 
+# podman is technically rhel8, not stein, would need another boolean for this
 
 OOO_HEAT_TEMPLATES="{{ tripleo_heat_templates }}"
 
@@ -18,7 +19,11 @@ openstack overcloud deploy \
     --stack overcloud \
     --control-flavor controller --compute-flavor compute \
     -e ${OOO_HEAT_TEMPLATES}/environments/config-debug.yaml  \
+{% if release_numeric_version |int >= 15 %}
+    -e ${OOO_HEAT_TEMPLATES}/environments/podman.yaml \
+{% else %}
     -e ${OOO_HEAT_TEMPLATES}/environments/docker.yaml  \
+{% endif %}
     -e ${OOO_HEAT_TEMPLATES}/environments/docker-ha.yaml  \
 {% if release_numeric_version |int <= 13 %}
     -e {{ working_dir }}/docker_registry.yaml  \

@@ -8,7 +8,15 @@
   stat:
     path: "{{ working_dir }}/containers-default-parameters.yaml"
   register: overcloud_containers
-  when: release_numeric_version | int > 13
+  when: 
+    - release_numeric_version | int > 13
+
+- name: does containers-prepare-parameter.yaml (OSP>13) already exist?
+  stat:
+    path: "{{ working_dir }}/containers-prepare-parameter.yaml"
+  register: containers_prepare_parameter
+  when: 
+    - release_numeric_version | int > 13
 
 # see https://github.com/openstack/tripleo-quickstart-extras/commit/b3794ff03ab841bbbc15a339e35a7ec02b193111#diff-51f6a4c98274d504643778b3633252cf
 # note containers-prepare-parameter.yaml must be generated, either by us
@@ -22,14 +30,15 @@
       shell: >
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare default
-          --output-env-file {{ working_dir }}/tripleo-config-generated-env-files/containers-prepare-parameter.yaml
+          --output-env-file {{ working_dir }}/containers-prepare-parameter.yaml
+      when: not containers_prepare_parameter.stat.exists | bool
 
     - name: "create container configs, step 2 create download config"
       shell: >
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare
           --output-env-file {{ working_dir }}/containers-default-parameters.yaml
-          -e {{ working_dir }}/tripleo-config-generated-env-files/containers-prepare-parameter.yaml
+          -e {{ working_dir }}/containers-prepare-parameter.yaml
       retries: 10 
       delay: 30
       register: result
@@ -47,14 +56,15 @@
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare default
           --local-push-destination
-          --output-env-file {{ working_dir }}/tripleo-config-generated-env-files/containers-prepare-parameter.yaml
+          --output-env-file {{ working_dir }}/containers-prepare-parameter.yaml
+      when: not containers_prepare_parameter.stat.exists | bool
 
     - name: "create container configs, step 2 download"
       shell: >
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare
           --output-env-file {{ working_dir }}/containers-default-parameters.yaml
-          -e {{ working_dir }}/tripleo-config-generated-env-files/containers-prepare-parameter.yaml
+          -e {{ working_dir }}/containers-prepare-parameter.yaml
       retries: 10 
       delay: 30
       register: result

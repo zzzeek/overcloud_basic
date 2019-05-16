@@ -18,7 +18,7 @@ overcloud_dns_servers:
 # should be called "working_undercloud_dir"
 working_dir: "/home/stack/"
 
-release_numeric_versions: {"stein": 15, "rocky": 14, "queens": 13, "pike": 12, "master": 14}
+release_numeric_versions: {"15-trunk": 15, "15": 15, "stein": 15, "rocky": 14, "queens": 13, "pike": 12}
 
 undercloud_management_ip: "{{ undercloud_network_cidr|nthhost(1) }}"
 
