@@ -12,15 +12,14 @@
           After=network.target
           [Service]
           User=stack
-          #ExecStart=/usr/bin/vbmcd  # TODO:  this is rhel8 easy_install putting us in usr/local
-          ExecStart=/usr/local/bin/vbmcd
+          ExecStart=/usr/bin/vbmcd
           ExecStopPre=/bin/bash -c 'for bmc in $(ls {{ ansible_user_dir }}/.vbmc/); do vbmc stop $bmc; done;'
           PIDFile={{ ansible_user_dir }}/.vbmc/master.pid
           Type=forking
           [Install]
           WantedBy=multi-user.target
 
-    # TODO: rhel8 is being weird on this, a bunch of manual stopping/starting seemed to fix 
+    # TODO: rhel8 is being weird on this, a bunch of manual stopping/starting seemed to fix
     # it
     - name: Start the Virtual BMCs
       become: true

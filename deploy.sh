@@ -9,6 +9,8 @@ COMPUTE_SCALE="1"
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 NTP_SERVER="clock.corp.redhat.com"
 
+DOCKER_MIRROR="brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
 INFRARED_CHECKOUT=${CHECKOUTS}/infrared
@@ -295,20 +297,22 @@ deploy_undercloud() {
     LIMIT_HOSTFILE=${INFRARED_WORKSPACE}/hosts-prov
     WRITE_HOSTFILE=${UNDERCLOUD_HOSTS}
 
-    if [ "${RHEL_OR_RDO}" == "rhel" ]; then
-        UNDERCLOUD_OPTS="--images-task rpm"
-        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --enable-testing-repos all"
+    UNDERCLOUD_OPTS=""
 
-	# not sure if this is needed but got this from another internal host.  if not used,
-	# defaults from infrared plugin.spec to docker-registry.engineering.redhat.com
+    if [ "${DOCKER_MIRROR}" != "" ]; then
         UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --registry-mirror=brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+    fi
 
-        # in Stein / OSP15, we don't have a local "podman" registry, it's a blank do-nothing 
-	# httpd host.  so please don't use --local-push-destination even with 
+    # in Stein / OSP15, we don't have a local "podman" registry, it's a blank do-nothing
+	# httpd host.  so please don't use --local-push-destination even with
 	# undercloud.
 	UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --registry-undercloud-skip=true"
+
+    if [ "${RHEL_OR_RDO}" == "rhel" ]; then
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --images-task rpm"
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --enable-testing-repos all"
     else
-        UNDERCLOUD_OPTS="-e rr_use_public_repos=true"
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} -e rr_use_public_repos=true"
         UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} -e rr_release_name=${RELEASE_OR_MASTER_DLRN}"
         UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --images-task import"
         UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --image-url ${IMAGE_URL}"

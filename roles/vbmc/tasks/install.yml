@@ -1,50 +1,32 @@
 ---
-- name: Install packages required for 'pxe_ipmitool' ironic's driver on RedHat based distros
+# note: this is very simplified from infrareds.   brute-force install pip
+# from the get-pip.py script, install virtualbmc from pip. don't attempt
+# to mess with python packages or easy install.
+
+- name: Install packages
   become: true
   package:
       name:
-        - python3-setuptools  # TODO: RDO wants python-setuptools
         - ipmitool
+        - gcc
+        - libvirt
+        - libvirt-devel
       state: latest
       disable_gpg_check: yes
 
-# TODO: rhel8 thing
-- name: hard-create python 3.6 easy install location, total hack
-  file:
-    path: "/usr/local/lib/python3.6"
-    state: directory
+- name: install pip
   become: true
+  script: |
+    cd /usr/local/src
+    curl -L -O https://bootstrap.pypa.io/get-pip.py
+    if [ -f /usr/bin/python ]; then
+      /usr/bin/python ./get-pip.py  --prefix /usr
+    else
+      /usr/bin/python3 ./get-pip.py --prefix /usr
+    fi
 
-- name: Install python-virtualbmc from repo's
+- name: Install python-virtualbmc with pip
   become: true
-  yum:
- # package:
-      name: python-virtualbmc
+  pip:
+      name: virtualbmc
       state: latest
-      disable_gpg_check: yes
-  ignore_errors: yes
-  register: virtualbmc_install_result
-
-- block:
-    - name: Install packages required for python-virtualbmc pip package
-      become: true
-      package:
-          name:
-            - gcc
-            - libvirt
-            - libvirt-devel
-          state: latest
-          disable_gpg_check: yes
-
-    - name: install pip
-      become: yes
-      easy_install:
-          name: pip
-          executable: "/usr/bin/easy_install-3"
-
-    - name: Install python-virtualbmc with pip
-      become: true
-      pip:
-          name: virtualbmc
-          state: latest
-  when: virtualbmc_install_result|failed
