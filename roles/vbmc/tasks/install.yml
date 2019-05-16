@@ -3,10 +3,17 @@
   become: true
   package:
       name:
-        - python-setuptools
+        - python3-setuptools  # TODO: RDO wants python-setuptools
         - ipmitool
       state: latest
       disable_gpg_check: yes
+
+# TODO: rhel8 thing
+- name: hard-create python 3.6 easy install location, total hack
+  file:
+    path: "/usr/local/lib/python3.6"
+    state: directory
+  become: true
 
 - name: Install python-virtualbmc from repo's
   become: true
@@ -33,6 +40,7 @@
       become: yes
       easy_install:
           name: pip
+          executable: "/usr/bin/easy_install-3"
 
     - name: Install python-virtualbmc with pip
       become: true

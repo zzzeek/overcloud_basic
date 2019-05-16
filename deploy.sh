@@ -296,9 +296,22 @@ deploy_undercloud() {
     WRITE_HOSTFILE=${UNDERCLOUD_HOSTS}
 
     if [ "${RHEL_OR_RDO}" == "rhel" ]; then
-        UNDERCLOUD_OPTS="--images-task rpm --enable-testing-repos all"
+        UNDERCLOUD_OPTS="--images-task rpm"
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --enable-testing-repos all"
+
+	# not sure if this is needed but got this from another internal host.  if not used,
+	# defaults from infrared plugin.spec to docker-registry.engineering.redhat.com
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --registry-mirror=brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+
+        # in Stein / OSP15, we don't have a local "podman" registry, it's a blank do-nothing 
+	# httpd host.  so please don't use --local-push-destination even with 
+	# undercloud.
+	UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --registry-undercloud-skip=true"
     else
-        UNDERCLOUD_OPTS="-e rr_use_public_repos=true -e rr_release_name=${RELEASE_OR_MASTER_DLRN} --images-task import --image-url ${IMAGE_URL}"
+        UNDERCLOUD_OPTS="-e rr_use_public_repos=true"
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} -e rr_release_name=${RELEASE_OR_MASTER_DLRN}"
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --images-task import"
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --image-url ${IMAGE_URL}"
     fi
 
     infrared_cmd tripleo-undercloud -vv --version ${RELEASE} \
