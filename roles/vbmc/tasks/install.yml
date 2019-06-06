@@ -17,13 +17,10 @@
 - name: install pip
   become: true
   script: |
+    mkdir -p /usr/local/src
     cd /usr/local/src
     curl -L -O https://bootstrap.pypa.io/get-pip.py
-    if [ -f /usr/bin/python ]; then
-      /usr/bin/python ./get-pip.py  --prefix /usr
-    else
-      /usr/bin/python3 ./get-pip.py --prefix /usr
-    fi
+    /usr/bin/python ./get-pip.py  --prefix /usr
 
 - name: Install python-virtualbmc with pip
   become: true
