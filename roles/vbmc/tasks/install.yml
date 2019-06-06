@@ -36,15 +36,19 @@
           state: latest
           disable_gpg_check: yes
 
-    - name: install pip
+    # rhel8 undercloud has some kind of strange /usr/local/ thing going 
+    # on with the python interpreter try to blow through that
+    - name: install pip in /usr/bin
       become: yes
-      easy_install:
-          name: pip
-          executable: "/usr/bin/easy_install-3"
+      shell: |
+        mkdir -p /usr/local/src
+        cd /usr/local/src
+        curl -L -O https://bootstrap.pypa.io/get-pip.py
+        python3 ./get-pip.py --prefix /usr
 
     - name: Install python-virtualbmc with pip
       become: true
       pip:
           name: virtualbmc
           state: latest
-  when: virtualbmc_install_result|failed
+  when: virtualbmc_install_result is failed
