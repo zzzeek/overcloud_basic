@@ -1,9 +1,12 @@
-
 vbmc_username: vbmc
 vbmc_password: vbmc
 vbmc_start_port: 6230
 
 ntp_server: clock.corp.redhat.com
+
+collectd_external_server: 10.19.227.59
+collectd_external_port: 25826
+
 
 
 undercloud_inventoryname: undercloud-0

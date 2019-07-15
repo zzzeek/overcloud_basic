@@ -6,6 +6,12 @@ parameter_defaults:
   # mostly from https://docs.openstack.org/tripleo-docs/latest/install/advanced_deployment/network_isolation.html
   # as well as https://github.com/openstack/tripleo-quickstart-extras/blob/master/roles/overcloud-prep-config/defaults/main.yml#L15
 
+  CollectdConnectionType: network
+  CollectdServer: '{{ collectd_external_server }}'
+  CollectdServerPort: '{{ collectd_external_port }}' 
+  CollectdSecurityLevel: None
+
+
   NtpServer: {{ ntp_server }}
 
   ExternalNetCidr: '{{ external_network_cidr }}'
