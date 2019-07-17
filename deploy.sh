@@ -388,7 +388,7 @@ main() {
     VMS_CMDS="rebuild_vms build_hosts"
     UNDERCLOUD_CMDS="download_images install_vbmc pre_undercloud deploy_undercloud"
     OVERCLOUD_CMDS="deploy_overcloud"
-    OVERCLOUD_TAGS="gen_ssh_key setup_vlan create_instackenv tune_undercloud introspect_nodes create_flavors build_heat_config prepare_containers run_deploy_overcloud"
+    OVERCLOUD_TAGS="gen_ssh_key setup_vlan create_instackenv tune_undercloud introspect_nodes create_flavors hack_tripleo build_heat_config prepare_containers run_deploy_overcloud"
 
     CMDS="$@"
 

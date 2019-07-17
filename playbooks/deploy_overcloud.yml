@@ -13,6 +13,7 @@
   hosts: undercloud
   gather_facts: no
   roles:
+    - {role: hack-tripleo, tags: ['hack_tripleo']}
     - {role: deploy-overcloud, tags: ['deploy_overcloud']}
 
 

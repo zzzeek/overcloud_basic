@@ -8,9 +8,10 @@ parameter_defaults:
 
   CollectdConnectionType: network
   CollectdServer: '{{ collectd_external_server }}'
-  CollectdServerPort: '{{ collectd_external_port }}' 
+  CollectdServerPort: '{{ collectd_external_port }}'
   CollectdSecurityLevel: None
 
+  EnableSQLAlchemyCollectd: true
 
   NtpServer: {{ ntp_server }}
 
