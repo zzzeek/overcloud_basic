@@ -1,8 +1,18 @@
+commit 169bf4028490aaf0c5648d57b729b3b3bf246b3f
+Author: Mike Bayer <mike_mp@zzzcomputing.com>
+Date:   Wed Jul 17 15:30:00 2019 -0400
+
+    Add SQLAlchemy-collectd support
+    
+    WIP
+    
+    Change-Id: I90c8e6947adc8ba60c37b841165a9108f8046e9d
+
 diff --git a/deployment/metrics/collectd-container-puppet.yaml b/deployment/metrics/collectd-container-puppet.yaml
-index 4c1794287..d848ce8e6 100644
+index 4c1794287..91ea7c63d 100644
 --- a/deployment/metrics/collectd-container-puppet.yaml
 +++ b/deployment/metrics/collectd-container-puppet.yaml
-@@ -229,6 +229,16 @@ parameters:
+@@ -229,6 +229,18 @@ parameters:
      type: number
      description: Minimum number of values Gnocchi should batch.
      default: 10
@@ -15,11 +25,13 @@ index 4c1794287..d848ce8e6 100644
 +    description: set to "debug" to enable message logging.
 +  CollectdSQLAlchemyBindHost:
 +    type: string
-+    description>
++    description: >
++      hostname for SQLAlchemy-collectd plugin to bind on.  defaults
++      to 0.0.0.0.
    CollectdAmqpHost:
      type: string
      description: Hostname or IP address of the AMQP 1.0 intermediary.
-@@ -298,6 +308,8 @@ conditions:
+@@ -298,6 +310,8 @@ conditions:
      and:
        - equals: [{get_param: CollectdGnocchiServer}, nil]
        - equals: [{get_param: CollectdGnocchiKeystoneEndpoint}, nil]
@@ -28,7 +40,7 @@ index 4c1794287..d848ce8e6 100644
  
  resources:
  
-@@ -382,6 +394,16 @@ outputs:
+@@ -382,6 +396,16 @@ outputs:
                tripleo::profile::base::metrics::collectd::collectd_securitylevel:
                  get_param: CollectdSecurityLevel
              - {}
@@ -46,7 +58,7 @@ index 4c1794287..d848ce8e6 100644
              - gnocchi_connection
              - map_merge:
 diff --git a/deployment/neutron/neutron-api-container-puppet.yaml b/deployment/neutron/neutron-api-container-puppet.yaml
-index c6f0d12c9..e6e5bab70 100644
+index 10db40de9..1d99338e0 100644
 --- a/deployment/neutron/neutron-api-container-puppet.yaml
 +++ b/deployment/neutron/neutron-api-container-puppet.yaml
 @@ -98,6 +98,11 @@ parameters:
@@ -61,7 +73,15 @@ index c6f0d12c9..e6e5bab70 100644
    NeutronApiPolicies:
      description: |
        A hash of policies to configure for Neutron API.
-@@ -195,9 +200,17 @@ outputs:
+@@ -142,6 +147,7 @@ conditions:
+   neutron_ovs_int_br_unset: {equals : [{get_param: NeutronOvsIntegrationBridge}, '']}
+   internal_tls_enabled: {equals: [{get_param: EnableInternalTLS}, true]}
+   neutron_dvr_unset: {equals : [{get_param: NeutronEnableDVR}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -195,9 +201,17 @@ outputs:
                  password: {get_param: NeutronPassword}
                  host: {get_param: [EndpointMap, MysqlInternal, host]}
                  path: /ovs_neutron
@@ -82,23 +102,11 @@ index c6f0d12c9..e6e5bab70 100644
              neutron::policy::policies: {get_param: NeutronApiPolicies}
              neutron::keystone::authtoken::www_authenticate_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
              neutron::keystone::authtoken::auth_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
-diff --git a/deployment/neutron/neutron-base.yaml b/deployment/neutron/neutron-base.yaml
-index da5792470..92dacb2f0 100644
---- a/deployment/neutron/neutron-base.yaml
-+++ b/deployment/neutron/neutron-base.yaml
-@@ -147,6 +147,7 @@ conditions:
-   dhcp_agents_zero: {equals : [{get_param: NeutronDhcpAgentsPerNetwork}, 0]}
-   service_debug_unset: {equals : [{get_param: NeutronDebug}, '']}
-   global_physnet_mtu_unset: {equals: [{get_param: NeutronGlobalPhysnetMtu}, 0]}
-+  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
- 
- outputs:
-   role_data:
 diff --git a/deployment/nova/nova-base-puppet.yaml b/deployment/nova/nova-base-puppet.yaml
-index 2ddbad6f3..bdb10485c 100644
+index f23f72a77..ac45b72c4 100644
 --- a/deployment/nova/nova-base-puppet.yaml
 +++ b/deployment/nova/nova-base-puppet.yaml
-@@ -77,6 +77,11 @@ parameters:
+@@ -64,6 +64,11 @@ parameters:
      type: string
      constraints:
        - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
@@ -110,7 +118,7 @@ index 2ddbad6f3..bdb10485c 100644
    EnableConfigPurge:
      type: boolean
      default: false
-@@ -246,6 +251,7 @@ conditions:
+@@ -238,6 +243,7 @@ conditions:
  
    compute_upgrade_level_empty: {equals : [{get_param: UpgradeLevelNovaCompute}, '']}
    service_debug_unset: {equals : [{get_param: NovaDebug}, '']}
@@ -118,7 +126,7 @@ index 2ddbad6f3..bdb10485c 100644
  
  resources:
  
-@@ -287,9 +293,17 @@ outputs:
+@@ -279,9 +285,17 @@ outputs:
                password: {get_param: NovaPassword}
                host: {get_param: [EndpointMap, MysqlCellInternal, host]}
                path: /nova
@@ -139,7 +147,7 @@ index 2ddbad6f3..bdb10485c 100644
            nova::cell0_database_connection:
              make_url:
                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
-@@ -297,9 +311,17 @@ outputs:
+@@ -289,9 +303,17 @@ outputs:
                password: {get_param: NovaPassword}
                host: {get_param: [EndpointMap, MysqlInternal, host]}
                path: /nova_cell0
@@ -160,7 +168,7 @@ index 2ddbad6f3..bdb10485c 100644
            nova::api_database_connection:
              make_url:
                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
-@@ -307,9 +329,17 @@ outputs:
+@@ -299,9 +321,17 @@ outputs:
                password: {get_param: NovaPassword}
                host: {get_param: [EndpointMap, MysqlInternal, host]}
                path: /nova_api
@@ -174,6 +182,27 @@ index 2ddbad6f3..bdb10485c 100644
 +                  read_default_group: tripleo
 +                  plugin: collectd
 +                  collectd_program_name: nova_api
++                  collectd_host: localhost
++              - query:
++                  read_default_file: /etc/my.cnf.d/tripleo.cnf
++                  read_default_group: tripleo
+           nova::placement_database_connection:
+             make_url:
+               scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
+@@ -309,9 +339,17 @@ outputs:
+               password: {get_param: NovaPassword}
+               host: {get_param: [EndpointMap, MysqlInternal, host]}
+               path: /nova_api
+-              query:
+-                read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                read_default_group: tripleo
++              if:
++              - enable_sqlalchemy_collectd
++              - query:
++                  read_default_file: /etc/my.cnf.d/tripleo.cnf
++                  read_default_group: tripleo
++                  plugin: collectd
++                  collectd_program_name: nova_placement
 +                  collectd_host: localhost
 +              - query:
 +                  read_default_file: /etc/my.cnf.d/tripleo.cnf
