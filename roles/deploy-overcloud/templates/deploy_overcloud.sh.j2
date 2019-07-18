@@ -27,8 +27,8 @@ openstack overcloud deploy \
     -e ${OOO_HEAT_TEMPLATES}/environments/docker-ha.yaml  \
     -e {{ working_dir }}/containers-default-parameters.yaml  \
     -e ${OOO_HEAT_TEMPLATES}/environments/network-isolation.yaml \
-    -e ${OOO_HEAT_TEMPLATES}/environments/metrics/collectd-standalone.yaml \
     -e {{ working_dir }}/network-environment.yaml  \
+    -e ${OOO_HEAT_TEMPLATES}/environments/metrics/collectd-standalone.yaml \
     -e ${OOO_HEAT_TEMPLATES}/environments/low-memory-usage.yaml     \
     -e ${OOO_HEAT_TEMPLATES}/environments/disable-telemetry.yaml   \
     -e {{ working_dir }}/naming_things.yaml  \
