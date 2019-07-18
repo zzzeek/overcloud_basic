@@ -1,4 +1,4 @@
-commit af00c0355665fe8fb6100640fd858521a025b07d
+commit 73e00c56c3c242d50c39e208b384c2af231c43e1
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Jul 17 15:30:00 2019 -0400
 
@@ -9,7 +9,7 @@ Date:   Wed Jul 17 15:30:00 2019 -0400
     Change-Id: I90c8e6947adc8ba60c37b841165a9108f8046e9d
 
 diff --git a/deployment/metrics/collectd-container-puppet.yaml b/deployment/metrics/collectd-container-puppet.yaml
-index 4c1794287..24e904a3f 100644
+index 4c1794287..daeacd741 100644
 --- a/deployment/metrics/collectd-container-puppet.yaml
 +++ b/deployment/metrics/collectd-container-puppet.yaml
 @@ -229,6 +229,20 @@ parameters:
@@ -49,7 +49,7 @@ index 4c1794287..24e904a3f 100644
 +          - if:
 +            - enable_sqlalchemy_collectd
 +            - map_merge:
-+              - tripleo::profile::base::metrics::collectd::sqlalchemy_collectd_enabled:
++              - tripleo::profile::base::metrics::collectd::enable_sqlalchemy_collectd:
 +                  true
 +              - tripleo::profile::base::metrics::collectd::sqlalchemy_collectd_bind_host:
 +                  get_param: CollectdSQLAlchemyBindHost
