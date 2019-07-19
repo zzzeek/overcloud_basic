@@ -1,4 +1,4 @@
-commit 455351e140a67b9dfeb9ff61fc0b344d3730b832
+commit 98d133d3287abdb2472af2c0a1aa88ffc724e04e
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Jul 17 15:30:27 2019 -0400
 
@@ -9,7 +9,7 @@ Date:   Wed Jul 17 15:30:27 2019 -0400
     Change-Id: I90c8e6947adc8ba60c37b841165a9108f8046e9d
 
 diff --git a/manifests/profile/base/metrics/collectd.pp b/manifests/profile/base/metrics/collectd.pp
-index d467fbf8..f99aebcb 100644
+index d467fbf8..980b0750 100644
 --- a/manifests/profile/base/metrics/collectd.pp
 +++ b/manifests/profile/base/metrics/collectd.pp
 @@ -133,6 +133,18 @@
@@ -46,7 +46,7 @@ index d467fbf8..f99aebcb 100644
      }
  
 +    if $enable_sqlalchemy_collectd {
-+      ::tripleo::profile::base::metrics::collectd::sqlalchemy_collectd { $sqlalchemy_collectd_bind_host:
++      ::tripleo::profile::base::metrics::collectd::sqlalchemy_collectd { 'sqlalchemy_collectd':
 +          bind_host                  => $sqlalchemy_collectd_bind_host,
 +          loglevel                   => $sqlalchemy_collectd_loglevel,
 +      }
@@ -57,7 +57,7 @@ index d467fbf8..f99aebcb 100644
          username      => $_collectd_username,
 diff --git a/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
 new file mode 100644
-index 00000000..cfce9797
+index 00000000..c3abdfbb
 --- /dev/null
 +++ b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
 @@ -0,0 +1,54 @@
@@ -107,7 +107,7 @@ index 00000000..cfce9797
 +    logtraces => true,
 +  }
 +
-+  $_conf = {listen => "listen ${bind_host} ${bind_port}"}
++  $conf = {listen => "listen ${bind_host} ${bind_port}"}
 +
 +  $config = $conf.filter |$key, $value| { $value != undef }
 +  ::collectd::plugin::python::module { 'collectd_sqlalchemy':
