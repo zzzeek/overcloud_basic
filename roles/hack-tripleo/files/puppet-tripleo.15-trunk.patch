@@ -1,5 +1,15 @@
+commit 455351e140a67b9dfeb9ff61fc0b344d3730b832
+Author: Mike Bayer <mike_mp@zzzcomputing.com>
+Date:   Wed Jul 17 15:30:27 2019 -0400
+
+    Add SQLAlchemy-collectd support
+    
+    WIP
+    
+    Change-Id: I90c8e6947adc8ba60c37b841165a9108f8046e9d
+
 diff --git a/manifests/profile/base/metrics/collectd.pp b/manifests/profile/base/metrics/collectd.pp
-index 056b2fd8..bd846bf0 100644
+index d467fbf8..f99aebcb 100644
 --- a/manifests/profile/base/metrics/collectd.pp
 +++ b/manifests/profile/base/metrics/collectd.pp
 @@ -133,6 +133,18 @@
@@ -36,7 +46,7 @@ index 056b2fd8..bd846bf0 100644
      }
  
 +    if $enable_sqlalchemy_collectd {
-+      ::tripleo::profile::base::metrics::collectd::sqlalchemy_collectd { $sqlalchemy_collectd_server:
++      ::tripleo::profile::base::metrics::collectd::sqlalchemy_collectd { $sqlalchemy_collectd_bind_host:
 +          bind_host                  => $sqlalchemy_collectd_bind_host,
 +          loglevel                   => $sqlalchemy_collectd_loglevel,
 +      }
@@ -45,3 +55,63 @@ index 056b2fd8..bd846bf0 100644
      if ! empty($collectd_server) {
        ::collectd::plugin::network::server { $collectd_server:
          username      => $_collectd_username,
+diff --git a/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
+new file mode 100644
+index 00000000..cfce9797
+--- /dev/null
++++ b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
+@@ -0,0 +1,54 @@
++# Copyright 2010 Red Hat, Inc.
++#
++# Licensed under the Apache License, Version 2.0 (the "License"); you may
++# not use this file except in compliance with the License. You may obtain
++# a copy of the License at
++#
++#      http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++# License for the specific language governing permissions and limitations
++# under the License.
++#
++# == Define: tripleo::profile::base::metrics::collectd::sqlalchemy_collectd
++#
++# This is used to create configuration file for sqlalchemy-collectd plugin
++#
++# === Parameters
++#
++# [*bind_host*]
++#   (Optional) String. Hostname to listen on.  Defaults to 0.0.0.0
++#
++# [*bind_port*]
++#   (Optional) Integer.  Port to listen on.  defaults to 25827.
++#
++# [*loglevel*]
++#   (Optional) String. Log level for the plugin, set to "debug" to show
++#   messages received.
++#   Defaults to 'info'
++#
++#
++define tripleo::profile::base::metrics::collectd::sqlalchemy_collectd (
++  $bind_host     = "0.0.0.0",
++  $bind_port     = 25827,
++  $loglevel      = "info",
++
++) {
++  include ::collectd
++
++  package { 'python-collectd-sqlalchemy':
++    ensure => "present",
++    module_import => "sqlalchemy_collectd.server.plugin",
++    logtraces => true,
++  }
++
++  $_conf = {listen => "listen ${bind_host} ${bind_port}"}
++
++  $config = $conf.filter |$key, $value| { $value != undef }
++  ::collectd::plugin::python::module { 'collectd_sqlalchemy':
++    config => [$config]
++  }
++
++}
