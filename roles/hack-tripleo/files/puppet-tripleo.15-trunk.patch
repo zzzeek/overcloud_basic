@@ -1,4 +1,4 @@
-commit a5bd5405a43ffc6746408b7d3e3dd60391794a97
+commit d265ea3e9a1b4d0734ae5798258e83043726408c
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Jul 17 15:30:27 2019 -0400
 
@@ -9,7 +9,7 @@ Date:   Wed Jul 17 15:30:27 2019 -0400
     Change-Id: I90c8e6947adc8ba60c37b841165a9108f8046e9d
 
 diff --git a/manifests/profile/base/metrics/collectd.pp b/manifests/profile/base/metrics/collectd.pp
-index d467fbf8..980b0750 100644
+index d467fbf8..b35ba2f4 100644
 --- a/manifests/profile/base/metrics/collectd.pp
 +++ b/manifests/profile/base/metrics/collectd.pp
 @@ -133,6 +133,18 @@
@@ -41,7 +41,19 @@ index d467fbf8..980b0750 100644
    $amqp_transport_name = 'metrics',
    $amqp_host = undef,
    $amqp_port = undef,
-@@ -282,6 +297,13 @@ class tripleo::profile::base::metrics::collectd (
+@@ -240,7 +255,10 @@ class tripleo::profile::base::metrics::collectd (
+       manage_repo => $collectd_manage_repo
+     }
+ 
+-    include ::collectd::plugin::python
++    class { '::collectd::plugin::python':
++      logtraces   => true,
++    }
++
+     $python_packages = concat(['collectd-python'], $python_read_plugins)
+     package { $python_packages:
+       ensure => 'present'
+@@ -282,6 +300,13 @@ class tripleo::profile::base::metrics::collectd (
        default => $collectd_securitylevel
      }
  
@@ -57,10 +69,10 @@ index d467fbf8..980b0750 100644
          username      => $_collectd_username,
 diff --git a/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
 new file mode 100644
-index 00000000..c95eaf05
+index 00000000..8e2d64cc
 --- /dev/null
 +++ b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,53 @@
 +# Copyright 2010 Red Hat, Inc.
 +#
 +# Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -105,16 +117,12 @@ index 00000000..c95eaf05
 +    ensure => "present",
 +  }
 +
-+  class { '::collectd::plugin::python':
-+    modules     => {
-+      'collectd_sqlalchemy' => {
-+        'config' => [{
-+            'listen' => "listen ${bind_host} ${bind_port}",
-+            'loglevel' => $loglevel
-+        }],
-+        'module_import' => 'sqlalchemy_collectd.server.plugin',
-+      },
-+    },
-+    logtraces   => true,
++  ::collectd::plugin::python::module { 'collectd_sqlalchemy':
++      config => [{
++          'listen' => "listen ${bind_host} ${bind_port}",
++          'loglevel' => $loglevel
++      }],
++      module_import => 'sqlalchemy_collectd.server.plugin',
 +  }
++
 +}
