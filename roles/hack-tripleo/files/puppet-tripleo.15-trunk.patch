@@ -1,4 +1,4 @@
-commit d265ea3e9a1b4d0734ae5798258e83043726408c
+commit ca320c9021d455cd777d933fc9b6282f0de6bad2
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Jul 17 15:30:27 2019 -0400
 
@@ -69,7 +69,7 @@ index d467fbf8..b35ba2f4 100644
          username      => $_collectd_username,
 diff --git a/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
 new file mode 100644
-index 00000000..8e2d64cc
+index 00000000..565681a9
 --- /dev/null
 +++ b/manifests/profile/base/metrics/collectd/sqlalchemy_collectd.pp
 @@ -0,0 +1,53 @@
@@ -119,7 +119,7 @@ index 00000000..8e2d64cc
 +
 +  ::collectd::plugin::python::module { 'collectd_sqlalchemy':
 +      config => [{
-+          'listen' => "listen ${bind_host} ${bind_port}",
++          'listen' => [$bind_host, $bind_port],
 +          'loglevel' => $loglevel
 +      }],
 +      module_import => 'sqlalchemy_collectd.server.plugin',
