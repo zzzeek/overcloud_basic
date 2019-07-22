@@ -1,4 +1,4 @@
-commit 73e00c56c3c242d50c39e208b384c2af231c43e1
+commit fa9ef38d763627c127193e35111e0144bac9620f
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Jul 17 15:30:00 2019 -0400
 
@@ -6,8 +6,644 @@ Date:   Wed Jul 17 15:30:00 2019 -0400
     
     WIP
     
-    Change-Id: I90c8e6947adc8ba60c37b841165a9108f8046e9d
+    stein version
+    
+    Change-Id: If598da717653a383a2d3b3373c56517f8bca832f
 
+diff --git a/deployment/aodh/aodh-base.yaml b/deployment/aodh/aodh-base.yaml
+index b467ee838..96379ac51 100644
+--- a/deployment/aodh/aodh-base.yaml
++++ b/deployment/aodh/aodh-base.yaml
+@@ -48,6 +48,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   KeystoneRegion:
+     type: string
+     default: 'regionOne'
+@@ -90,6 +95,7 @@ parameter_groups:
+ 
+ conditions:
+   service_debug_unset: {equals : [{get_param: AodhDebug}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -106,8 +112,18 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /aodh
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: aodh
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+         aodh::logging::debug:
+           if:
+           - service_debug_unset
+diff --git a/deployment/barbican/barbican-api-container-puppet.yaml b/deployment/barbican/barbican-api-container-puppet.yaml
+index 01189eebb..5164c2fb6 100644
+--- a/deployment/barbican/barbican-api-container-puppet.yaml
++++ b/deployment/barbican/barbican-api-container-puppet.yaml
+@@ -34,6 +34,11 @@ parameters:
+   DefaultPasswords:
+     default: {}
+     type: json
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   RoleName:
+     default: ''
+     description: Role name on which the service is applied
+@@ -185,6 +190,7 @@ conditions:
+     - atos_hsm_enabled
+   pkcs11_plugin_enabled: {equals: [{get_param: BarbicanPkcs11CryptoEnabled}, true]}
+   pkcs11_rewrap_pkeks: {equals: [{get_param: BarbicanPkcs11CryptoRewrapKeys}, true]}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -258,8 +264,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /barbican
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: barbican
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+             tripleo::barbican_api::firewall_rules:
+               '117 barbican':
+                 dport:
+diff --git a/deployment/cinder/cinder-base.yaml b/deployment/cinder/cinder-base.yaml
+index 3860b3517..789ee6f51 100644
+--- a/deployment/cinder/cinder-base.yaml
++++ b/deployment/cinder/cinder-base.yaml
+@@ -22,6 +22,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   ServiceData:
+     default: {}
+     description: Dictionary packing service data
+@@ -131,6 +136,7 @@ parameter_groups:
+ 
+ conditions:
+   service_debug_unset: {equals : [{get_param: CinderDebug}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -146,8 +152,18 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /cinder
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: cinder
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+         cinder::logging::debug:
+           if:
+           - service_debug_unset
+diff --git a/deployment/deprecated/panko/panko-api-container-puppet.yaml b/deployment/deprecated/panko/panko-api-container-puppet.yaml
+index 2dffa9905..5411b540e 100644
+--- a/deployment/deprecated/panko/panko-api-container-puppet.yaml
++++ b/deployment/deprecated/panko/panko-api-container-puppet.yaml
+@@ -181,8 +181,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /panko
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: panko
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+             panko::logging::debug:
+               if:
+               - service_debug_unset
+diff --git a/deployment/ec2/ec2-api-container-puppet.yaml b/deployment/ec2/ec2-api-container-puppet.yaml
+index 6f5eebd4d..f43103124 100644
+--- a/deployment/ec2/ec2-api-container-puppet.yaml
++++ b/deployment/ec2/ec2-api-container-puppet.yaml
+@@ -33,6 +33,11 @@ parameters:
+   DefaultPasswords:
+     default: {}
+     type: json
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   RoleName:
+     default: ''
+     description: Role name on which the service is applied
+@@ -85,6 +90,7 @@ conditions:
+   nova_workers_zero: {equals : [{get_param: Ec2ApiWorkers}, 0]}
+   external_network_unset: {equals : [{get_param: Ec2ApiExternalNetwork}, '']}
+   use_tls_proxy: {equals: [{get_param: EnableInternalTLS}, true]}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -152,8 +158,18 @@ outputs:
+               host: {get_param: [EndpointMap, MysqlInternal, host]}
+               path: /ec2_api
+               query:
+-                read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: ec2_api
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+           ec2api::api::keystone_ec2_tokens_url:
+             list_join:
+               - ''
+@@ -348,7 +364,7 @@ outputs:
+             - { 'path': /var/log/containers/ec2_api, 'setype': svirt_sandbox_file_t }
+             - { 'path': /var/log/containers/ec2_api_metadata, 'setype': svirt_sandbox_file_t }
+             - { 'path': /var/log/ec2_api, 'setype': svirt_sandbox_file_t }
+-            - { 'path': /var/log/ec2_api_metadata, 'setype': svirt_sandbox_file_t }            
++            - { 'path': /var/log/ec2_api_metadata, 'setype': svirt_sandbox_file_t }
+         - name: ec2_api logs readme
+           copy:
+             dest: /var/log/{{ item }}/readme.txt
+diff --git a/deployment/experimental/designate/designate-central-container-puppet.yaml b/deployment/experimental/designate/designate-central-container-puppet.yaml
+index af8d42f89..42ac1bd5e 100644
+--- a/deployment/experimental/designate/designate-central-container-puppet.yaml
++++ b/deployment/experimental/designate/designate-central-container-puppet.yaml
+@@ -28,6 +28,11 @@ parameters:
+   DefaultPasswords:
+     default: {}
+     type: json
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   RoleName:
+     default: ''
+     description: Role name on which the service is applied
+@@ -53,6 +58,7 @@ parameters:
+ 
+ conditions:
+   designate_workers_zero: {equals : [{get_param: DesignateWorkers}, 0]}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -90,8 +96,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /designate
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: designate
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+           -
+             if:
+             - designate_workers_zero
+diff --git a/deployment/experimental/designate/designate-mdns-container-puppet.yaml b/deployment/experimental/designate/designate-mdns-container-puppet.yaml
+index 4a30e2c80..b387e52ba 100644
+--- a/deployment/experimental/designate/designate-mdns-container-puppet.yaml
++++ b/deployment/experimental/designate/designate-mdns-container-puppet.yaml
+@@ -28,6 +28,11 @@ parameters:
+   DefaultPasswords:
+     default: {}
+     type: json
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   RoleName:
+     default: ''
+     description: Role name on which the service is applied
+@@ -50,6 +55,7 @@ parameters:
+ 
+ conditions:
+   designate_workers_zero: {equals : [{get_param: DesignateWorkers}, 0]}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -86,8 +92,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /designate
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: designate_mdns
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+             tripleo::designate_mdns::firewall_rules:
+               '142 designate_mdns udp':
+                 proto: 'udp'
+diff --git a/deployment/glance/glance-api-container-puppet.yaml b/deployment/glance/glance-api-container-puppet.yaml
+index 2f4428139..a3589bb6c 100644
+--- a/deployment/glance/glance-api-container-puppet.yaml
++++ b/deployment/glance/glance-api-container-puppet.yaml
+@@ -40,6 +40,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   GlancePassword:
+     description: The password for the glance service and db account, used by the glance services.
+     type: string
+@@ -268,6 +273,7 @@ conditions:
+       - equals:
+         - get_param: NovaEnableRbdBackend
+         - true
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ 
+ resources:
+@@ -309,8 +315,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /glance
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: glance
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+             glance::api::bind_port: {get_param: [EndpointMap, GlanceInternal, port]}
+             glance::api::authtoken::auth_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
+             glance::api::authtoken::auth_url: { get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
+diff --git a/deployment/gnocchi/gnocchi-base.yaml b/deployment/gnocchi/gnocchi-base.yaml
+index 9fa0290b0..f82059228 100644
+--- a/deployment/gnocchi/gnocchi-base.yaml
++++ b/deployment/gnocchi/gnocchi-base.yaml
+@@ -71,6 +71,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   GnocchiStorageSwiftEndpointType:
+     default: 'internalURL'
+     description: Set to modify which endpoint type is gnocchi accessing swift
+@@ -105,6 +110,7 @@ parameters:
+ 
+ conditions:
+   service_debug_unset: {equals : [{get_param: GnocchiDebug}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   aux_parameters:
+@@ -131,8 +137,19 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /gnocchi
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: gnochhi
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
++
+         gnocchi::db::sync::extra_opts:
+           str_replace:
+             template: " --sacks-number NUM_SACKS"
+diff --git a/deployment/heat/heat-engine-container-puppet.yaml b/deployment/heat/heat-engine-container-puppet.yaml
+index 892277c09..ef6d1ff59 100644
+--- a/deployment/heat/heat-engine-container-puppet.yaml
++++ b/deployment/heat/heat-engine-container-puppet.yaml
+@@ -54,6 +54,11 @@ parameters:
+     default: true
+     description: |
+         Whether to create cron job for purging soft deleted rows in the Heat database.
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   HeatWorkers:
+     default: 0
+     description: Number of workers for Heat service.
+@@ -100,6 +105,7 @@ parameters:
+ 
+ conditions:
+   heat_workers_unset: {equals : [{get_param: HeatWorkers}, 0]}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -158,8 +164,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /heat
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: heat
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+             heat::keystone_ec2_uri:
+               list_join:
+               - ''
+diff --git a/deployment/ironic/ironic-base-puppet.yaml b/deployment/ironic/ironic-base-puppet.yaml
+index 2e4f43e24..ba272f16d 100644
+--- a/deployment/ironic/ironic-base-puppet.yaml
++++ b/deployment/ironic/ironic-base-puppet.yaml
+@@ -40,6 +40,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   IronicDefaultResourceClass:
+     default: ''
+     description: Default resource class to use for new nodes.
+@@ -83,6 +88,7 @@ parameter_groups:
+ conditions:
+   service_debug_unset: {equals : [{get_param: IronicDebug}, '']}
+   default_rsc_unset: {equals : [{get_param: IronicDefaultResourceClass}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -100,8 +106,18 @@ outputs:
+               host: {get_param: [EndpointMap, MysqlInternal, host]}
+               path: /ironic
+               query:
+-                read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: ironic
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+           ironic::logging::debug:
+             if:
+             - service_debug_unset
+diff --git a/deployment/ironic/ironic-inspector-container-puppet.yaml b/deployment/ironic/ironic-inspector-container-puppet.yaml
+index a75ecb070..8c7af4d49 100644
+--- a/deployment/ironic/ironic-inspector-container-puppet.yaml
++++ b/deployment/ironic/ironic-inspector-container-puppet.yaml
+@@ -51,6 +51,11 @@ parameters:
+     default: false
+     description: Set to True to enable debugging on all services.
+     type: boolean
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   IronicInspectorDiscoveryDefaultDriver:
+     default: 'ipmi'
+     description: |
+@@ -161,6 +166,7 @@ conditions:
+   ironic_inspection_subnets_not_set: {equals : [{get_param: IronicInspectorSubnets}, {}]}
+   enable_architecture_ppc64le: {contains: ['ppc64le', {get_param: AdditionalArchitectures}]}
+   ipa_images: {not: {equals: [{get_param: IPAImageURLs}, []]}}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -240,15 +246,25 @@ outputs:
+             ironic::inspector::ramdisk_collectors: {get_param: IronicInspectorCollectors}
+             ironic::inspector::ramdisk_kernel_args: {get_param: IronicInspectorKernelArgs}
+             ironic::inspector::db::database_connection:
+-              list_join:
+-                - ''
+-                - - {get_param: [EndpointMap, MysqlInternal, protocol]}
+-                  - '://ironic-inspector:'
+-                  - {get_param: IronicPassword}
+-                  - '@'
+-                  - {get_param: [EndpointMap, MysqlInternal, host]}
+-                  - '/ironic-inspector'
+-                  - '?read_default_file=/etc/my.cnf.d/tripleo.cnf&read_default_group=tripleo'
++              make_url:
++                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
++                username: ironic-inspector
++                password: {get_param: IronicPassword}
++                host: {get_param: [EndpointMap, MysqlInternal, host]}
++                path: /ironic-inspector
++                query:
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: ironic_inspector
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+           -
+             if:
+             - enable_architecture_ppc64le
+diff --git a/deployment/keystone/keystone-container-puppet.yaml b/deployment/keystone/keystone-container-puppet.yaml
+index 93e324e07..aee1bc62a 100644
+--- a/deployment/keystone/keystone-container-puppet.yaml
++++ b/deployment/keystone/keystone-container-puppet.yaml
+@@ -87,6 +87,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   AdminEmail:
+     default: 'admin@example.com'
+     description: The email for the keystone admin account.
+@@ -402,6 +407,7 @@ conditions:
+   keystone_federation_enabled: {equals: [{get_param: KeystoneFederationEnable}, True]}
+   keystone_openidc_enabled: {equals: [{get_param: KeystoneOpenIdcEnable}, True]}
+   service_debug_unset: {equals : [{get_param: KeystoneDebug}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+   # Security compliance
+   change_password_upon_first_use_set: {not: {equals: [{get_param: KeystoneChangePasswordUponFirstUse}, '']}}
+@@ -438,8 +444,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /keystone
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: keystone
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+             keystone::token_expiration: {get_param: TokenExpiration}
+             keystone::admin_token: {get_param: AdminToken}
+             keystone::admin_password: {get_param: AdminPassword}
+diff --git a/deployment/manila/manila-base.yaml b/deployment/manila/manila-base.yaml
+index 7ecafee91..4e43e8132 100644
+--- a/deployment/manila/manila-base.yaml
++++ b/deployment/manila/manila-base.yaml
+@@ -44,6 +44,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   ManilaPassword:
+     description: The password for the manila service account.
+     type: string
+@@ -87,6 +92,7 @@ parameter_groups:
+ conditions:
+   service_debug_unset: {equals : [{get_param: ManilaDebug}, '']}
+   manila_ipv6: {equals : [{get_param: ManilaIPv6}, true]}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -110,8 +116,18 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /manila
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: manila
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+         manila::network::neutron::network_plugin_ipv6_enabled: {get_param: ManilaIPv6}
+         # Currently the address family parameters are mutually exclusive
+         manila::network::neutron::network_plugin_ipv4_enabled: {if: ["manila_ipv6", false, true]}
 diff --git a/deployment/metrics/collectd-container-puppet.yaml b/deployment/metrics/collectd-container-puppet.yaml
 index 4c1794287..daeacd741 100644
 --- a/deployment/metrics/collectd-container-puppet.yaml
@@ -59,6 +695,51 @@ index 4c1794287..daeacd741 100644
            - if: # Collectd connected directly to Gnocchi DB
              - gnocchi_connection
              - map_merge:
+diff --git a/deployment/mistral/mistral-base.yaml b/deployment/mistral/mistral-base.yaml
+index bc24500a2..2ec574049 100644
+--- a/deployment/mistral/mistral-base.yaml
++++ b/deployment/mistral/mistral-base.yaml
+@@ -41,6 +41,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   MistralPassword:
+     description: The password for the Mistral service and db account, used by the Mistral services.
+     type: string
+@@ -87,6 +92,7 @@ parameter_groups:
+ 
+ conditions:
+   service_debug_unset: {equals : [{get_param: MistralDebug}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -102,8 +108,18 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /mistral
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: mistral
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+         mistral::notification_driver: {get_param: NotificationDriver}
+         mistral::debug:
+           if:
 diff --git a/deployment/neutron/neutron-api-container-puppet.yaml b/deployment/neutron/neutron-api-container-puppet.yaml
 index 10db40de9..78211673e 100644
 --- a/deployment/neutron/neutron-api-container-puppet.yaml
@@ -105,7 +786,7 @@ index 10db40de9..78211673e 100644
              neutron::keystone::authtoken::www_authenticate_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
              neutron::keystone::authtoken::auth_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
 diff --git a/deployment/nova/nova-base-puppet.yaml b/deployment/nova/nova-base-puppet.yaml
-index f23f72a77..40fa7c4f5 100644
+index f23f72a77..5e4a1c28e 100644
 --- a/deployment/nova/nova-base-puppet.yaml
 +++ b/deployment/nova/nova-base-puppet.yaml
 @@ -64,6 +64,11 @@ parameters:
@@ -170,12 +851,10 @@ index f23f72a77..40fa7c4f5 100644
            nova::api_database_connection:
              make_url:
                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
-@@ -300,8 +326,18 @@ outputs:
+@@ -300,8 +326,20 @@ outputs:
                host: {get_param: [EndpointMap, MysqlInternal, host]}
                path: /nova_api
                query:
--                read_default_file: /etc/my.cnf.d/tripleo.cnf
--                read_default_group: tripleo
 +                if:
 +                  - enable_sqlalchemy_collectd
 +                  -
@@ -187,11 +866,13 @@ index f23f72a77..40fa7c4f5 100644
 +                  -
 +                      read_default_file: /etc/my.cnf.d/tripleo.cnf
 +                      read_default_group: tripleo
+                 read_default_file: /etc/my.cnf.d/tripleo.cnf
+                 read_default_group: tripleo
 +
            nova::placement_database_connection:
              make_url:
                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
-@@ -310,8 +346,18 @@ outputs:
+@@ -310,8 +348,18 @@ outputs:
                host: {get_param: [EndpointMap, MysqlInternal, host]}
                path: /nova_api
                query:
@@ -212,3 +893,229 @@ index f23f72a77..40fa7c4f5 100644
            nova::logging::debug:
              if:
              - service_debug_unset
+diff --git a/deployment/octavia/octavia-base.yaml b/deployment/octavia/octavia-base.yaml
+index b90d91bd9..48b116224 100644
+--- a/deployment/octavia/octavia-base.yaml
++++ b/deployment/octavia/octavia-base.yaml
+@@ -40,6 +40,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   EnableConfigPurge:
+     type: boolean
+     default: false
+@@ -168,6 +173,7 @@ conditions:
+   octavia_ca_cert_unset: {equals: [{get_param: OctaviaCaCert}, '']}
+   octavia_ca_key_unset: {equals: [{get_param: OctaviaCaKey}, '']}
+   octavia_topology_unset: {equals : [{get_param: OctaviaLoadBalancerTopology}, ""]}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -191,8 +197,18 @@ outputs:
+                 host: {get_param: [EndpointMap, MysqlInternal, host]}
+                 path: /octavia
+                 query:
+-                  read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                  read_default_group: tripleo
++                  if:
++                    - enable_sqlalchemy_collectd
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++                        plugin: collectd
++                        collectd_program_name: octavia
++                        collectd_host: localhost
++                    -
++                        read_default_file: /etc/my.cnf.d/tripleo.cnf
++                        read_default_group: tripleo
++
+             octavia::service_auth::auth_url: {get_param: [EndpointMap, KeystoneV3Internal, uri]}
+             octavia::service_auth::auth_type: 'password'
+             octavia::service_auth::username: {get_param: OctaviaUserName}
+diff --git a/deployment/sahara/sahara-base.yaml b/deployment/sahara/sahara-base.yaml
+index 99fa3dbeb..ff7865a21 100644
+--- a/deployment/sahara/sahara-base.yaml
++++ b/deployment/sahara/sahara-base.yaml
+@@ -44,6 +44,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   SaharaPlugins:
+     default: ["ambari","cdh","mapr","vanilla","spark","storm"]
+     description: Sahara enabled plugin list
+@@ -92,6 +97,7 @@ parameter_groups:
+ 
+ conditions:
+   service_debug_unset: {equals : [{get_param: SaharaDebug}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -107,8 +113,18 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /sahara
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: sahara
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+         sahara::notify::notification_driver: {get_param: NotificationDriver}
+         sahara::debug:
+           if:
+diff --git a/deployment/tacker/tacker-container-puppet.yaml b/deployment/tacker/tacker-container-puppet.yaml
+index 3cc764f78..2517d7871 100644
+--- a/deployment/tacker/tacker-container-puppet.yaml
++++ b/deployment/tacker/tacker-container-puppet.yaml
+@@ -50,6 +50,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   KeystoneRegion:
+     type: string
+     default: 'regionOne'
+@@ -98,6 +103,7 @@ parameter_groups:
+ 
+ conditions:
+   service_debug_unset: {equals : [{get_param: TackerDebug}, '']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -122,8 +128,18 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /tacker
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: tacker
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+ 
+         tacker::logging::debug:
+           if:
+diff --git a/deployment/zaqar/zaqar-container-puppet.yaml b/deployment/zaqar/zaqar-container-puppet.yaml
+index 60f527586..a4b05f079 100644
+--- a/deployment/zaqar/zaqar-container-puppet.yaml
++++ b/deployment/zaqar/zaqar-container-puppet.yaml
+@@ -46,6 +46,11 @@ parameters:
+     type: string
+     constraints:
+       - allowed_values: [ '', 'true', 'True', 'TRUE', 'false', 'False', 'FALSE']
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+   ZaqarPassword:
+     description: The password for Zaqar
+     type: string
+@@ -87,6 +92,7 @@ conditions:
+   zaqar_workers_zero: {equals : [{get_param: ZaqarWorkers}, 0]}
+   zaqar_messaging_store_swift: {equals : [{get_param: ZaqarMessageStore}, 'swift']}
+   zaqar_messaging_store_redis: {equals : [{get_param: ZaqarMessageStore}, 'redis']}
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ resources:
+ 
+@@ -187,8 +193,18 @@ outputs:
+                   host: {get_param: [EndpointMap, MysqlInternal, host]}
+                   path: /zaqar
+                   query:
+-                    read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                    read_default_group: tripleo
++                    if:
++                      - enable_sqlalchemy_collectd
++                      -
++                          read_default_file: /etc/my.cnf.d/tripleo.cnf
++                          read_default_group: tripleo
++                          plugin: collectd
++                          collectd_program_name: zaqar
++                          collectd_host: localhost
++                      -
++                          read_default_file: /etc/my.cnf.d/tripleo.cnf
++                          read_default_group: tripleo
++
+             - {}
+           -
+             if:
+diff --git a/puppet/services/neutron-plugin-plumgrid.yaml b/puppet/services/neutron-plugin-plumgrid.yaml
+index e8100cb9e..db6e47e57 100644
+--- a/puppet/services/neutron-plugin-plumgrid.yaml
++++ b/puppet/services/neutron-plugin-plumgrid.yaml
+@@ -42,6 +42,11 @@ parameters:
+     description: The password for the keystone admin account, used for monitoring, querying neutron etc.
+     type: string
+     hidden: true
++  EnableSQLAlchemyCollectd:
++    type: boolean
++    description: >
++        Set to True to send collectd metrics to the local collectd instance.
++    default: false
+ 
+   # PLUMgrid specific settings
+   PLUMgridDirectorServer:
+@@ -96,6 +101,8 @@ parameters:
+     type: string
+     default: present
+ 
++conditions:
++  enable_sqlalchemy_collectd: {equals : [{get_param: EnableSQLAlchemyCollectd}, true]}
+ 
+ outputs:
+   role_data:
+@@ -111,8 +118,18 @@ outputs:
+             host: {get_param: [EndpointMap, MysqlInternal, host]}
+             path: /ovs_neutron
+             query:
+-              read_default_file: /etc/my.cnf.d/tripleo.cnf
+-              read_default_group: tripleo
++                if:
++                  - enable_sqlalchemy_collectd
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++                      plugin: collectd
++                      collectd_program_name: neutron_plumgrid
++                      collectd_host: localhost
++                  -
++                      read_default_file: /etc/my.cnf.d/tripleo.cnf
++                      read_default_group: tripleo
++
+         neutron::plugins::plumgrid::controller_priv_host: {get_param: [EndpointMap, KeystoneInternal, host]}
+         neutron::plugins::plumgrid::admin_password: {get_param: AdminPassword}
+         neutron::plugins::plumgrid::metadata_proxy_shared_secret: {get_param: NeutronMetadataProxySharedSecret}
