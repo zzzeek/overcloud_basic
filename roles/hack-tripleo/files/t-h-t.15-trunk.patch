@@ -1,4 +1,4 @@
-commit fa9ef38d763627c127193e35111e0144bac9620f
+commit fdfd42c96e05f21d38ecee1406a635f7b71987fe
 Author: Mike Bayer <mike_mp@zzzcomputing.com>
 Date:   Wed Jul 17 15:30:00 2019 -0400
 
@@ -786,7 +786,7 @@ index 10db40de9..78211673e 100644
              neutron::keystone::authtoken::www_authenticate_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
              neutron::keystone::authtoken::auth_uri: {get_param: [EndpointMap, KeystoneInternal, uri_no_suffix] }
 diff --git a/deployment/nova/nova-base-puppet.yaml b/deployment/nova/nova-base-puppet.yaml
-index f23f72a77..5e4a1c28e 100644
+index f23f72a77..40fa7c4f5 100644
 --- a/deployment/nova/nova-base-puppet.yaml
 +++ b/deployment/nova/nova-base-puppet.yaml
 @@ -64,6 +64,11 @@ parameters:
@@ -851,10 +851,12 @@ index f23f72a77..5e4a1c28e 100644
            nova::api_database_connection:
              make_url:
                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
-@@ -300,8 +326,20 @@ outputs:
+@@ -300,8 +326,18 @@ outputs:
                host: {get_param: [EndpointMap, MysqlInternal, host]}
                path: /nova_api
                query:
+-                read_default_file: /etc/my.cnf.d/tripleo.cnf
+-                read_default_group: tripleo
 +                if:
 +                  - enable_sqlalchemy_collectd
 +                  -
@@ -866,13 +868,11 @@ index f23f72a77..5e4a1c28e 100644
 +                  -
 +                      read_default_file: /etc/my.cnf.d/tripleo.cnf
 +                      read_default_group: tripleo
-                 read_default_file: /etc/my.cnf.d/tripleo.cnf
-                 read_default_group: tripleo
 +
            nova::placement_database_connection:
              make_url:
                scheme: {get_param: [EndpointMap, MysqlInternal, protocol]}
-@@ -310,8 +348,18 @@ outputs:
+@@ -310,8 +346,18 @@ outputs:
                host: {get_param: [EndpointMap, MysqlInternal, host]}
                path: /nova_api
                query:
