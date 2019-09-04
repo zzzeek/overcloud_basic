@@ -5,7 +5,7 @@
 
 - name: check that it passed
   shell:
-      echo $(tail -1 {{ working_dir }}/overcloud_deploy.log)
+      echo $(tail -50 {{ working_dir }}/overcloud_deploy.log | grep -vi warning | tail -1)
   register: deploy_result
 
 - name: check passing
