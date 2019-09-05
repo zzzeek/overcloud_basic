@@ -6,12 +6,14 @@
   become: yes
   args:
     chdir: /etc/pki/ca-trust/source/anchors
+  when: release_numeric_version |int > 13
 
 # this is the workaround post https://review.openstack.org/#/c/642374/1
 - name: run zaqar workaround #2
   lineinfile:
     line: 'export OS_CACERT="/etc/pki/ca-trust/source/anchors/undercloud-cacert.pem"'
     path: "{{ working_dir }}/stackrc"
+  when: release_numeric_version |int > 13
 
 - name: remove existing nodes
   shell: |

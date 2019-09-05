@@ -29,7 +29,8 @@ OVERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_overcloud
 # RELEASE=stein
 
 RHEL_OR_RDO='rhel'
-RELEASE="15-trunk"
+#RELEASE="15-trunk"
+RELEASE="13"
 
 
 # this token goes into the URL as follows:
@@ -47,11 +48,11 @@ DLRN_DEPS="https://trunk.rdoproject.org/centos7-${RELEASE_OR_MASTER_DLRN}/delore
 
 
 # this token is for the images.rdoproject.org link
-RELEASE_OR_MASTER_IMAGES=${RELEASE}/rdo_trunk
-# RELEASE_OR_MASTER_IMAGES=queens/delorean
-# RELEASE_OR_MASTER_IMAGES=master/delorean
+RDO_RELEASE_OR_MASTER_IMAGES=${RELEASE}/rdo_trunk
+# RDO_RELEASE_OR_MASTER_IMAGES=queens/delorean
+# RDO_RELEASE_OR_MASTER_IMAGES=master/delorean
 # etc
-RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RELEASE_OR_MASTER_IMAGES}/"
+RDO_OVERCLOUD_IMAGES="https://images.rdoproject.org/${RDO_RELEASE_OR_MASTER_IMAGES}/"
 
 
 
@@ -256,7 +257,12 @@ build_vms() {
     if [ "${RHEL_OR_RDO}" == 'rdo' ]; then
         QCOW_URL="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
     else
-	QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8.0/compose/BaseOS/x86_64/images/rhel-guest-image-8.0-1854.x86_64.qcow2"
+	# OSP15
+	# QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8.0/compose/BaseOS/x86_64/images/rhel-guest-image-8.0-1854.x86_64.qcow2"
+
+	# OSP13
+	QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-7.5/compose/Server/x86_64/images/rhel-guest-image-7.5-146.x86_64.qcow2"
+	#QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-7.6/compose/Server/x86_64/images/rhel-guest-image-7.6-210.x86_64.qcow2"
         #QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8/compose/BaseOS/x86_64/images/rhel-guest-image-8.1-43.x86_64.qcow2"
     fi
 
@@ -335,7 +341,7 @@ deploy_overcloud() {
         -i ${UNDERCLOUD_HOSTS} \
         --tags "${DEPLOY_OVERCLOUD_TAGS}" \
         -e release_name=${RELEASE} \
-        -e container_namespace=${RELEASE_OR_MASTER_IMAGES} \
+        -e rdo_container_namespace=${RDO_RELEASE_OR_MASTER_IMAGES} \
         -e container_tag=${BUILD} \
         -e working_dir=/home/stack  \
         -e compute_scale="${COMPUTE_SCALE}" \

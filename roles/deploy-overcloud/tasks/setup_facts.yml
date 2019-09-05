@@ -12,3 +12,4 @@
     management_ipv4_address: "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}"
     overcloud_nodes: "{{ groups.get('overcloud_nodes', []) }}"
     tripleo_heat_templates: "{{ working_dir }}/tripleo-patch/tripleo-heat-templates"
+    rhos_or_rdo: "{{ rhos_or_rdo_lookup[release_name] }}"
