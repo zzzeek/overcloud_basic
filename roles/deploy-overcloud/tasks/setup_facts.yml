@@ -12,7 +12,7 @@
     management_ipv4_address: "{{ hostvars['hypervisor']['ansible_default_ipv4']['address'] }}"
     overcloud_nodes: "{{ groups.get('overcloud_nodes', []) }}"
     rhos_or_rdo: "{{ rhos_or_rdo_lookup[release_name] }}"
-
+    heat_template_version: "{{ heat_template_versions[release_name] }}"
     # this was set to the local directory in stretch_galera, can be made
     # dynamic again if we need to modify templates
     # tripleo_heat_templates: "{{ working_dir }}/tripleo-patch/tripleo-heat-templates"
