@@ -9,7 +9,8 @@ COMPUTE_SCALE="1"
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 NTP_SERVER="clock.corp.redhat.com"
 
-DOCKER_MIRROR="brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+REDHAT_DOCKER_MIRROR="brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+#REDHAT_DOCKER_MIRROR="registry.access.redhat.com"
 
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
@@ -305,8 +306,8 @@ deploy_undercloud() {
 
     UNDERCLOUD_OPTS=""
 
-    if [ "${DOCKER_MIRROR}" != "" ]; then
-        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --registry-mirror=brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+    if [ "${REDHAT_DOCKER_MIRROR}" != "" ]; then
+        UNDERCLOUD_OPTS="${UNDERCLOUD_OPTS} --registry-mirror=${REDHAT_DOCKER_MIRROR}"
     fi
 
     # in Stein / OSP15, we don't have a local "podman" registry, it's a blank do-nothing
@@ -337,11 +338,13 @@ deploy_undercloud() {
 
 deploy_overcloud() {
     pushd ${SCRIPT_HOME}
+
     ${ANSIBLE_PLAYBOOK} -vv \
         -i ${UNDERCLOUD_HOSTS} \
         --tags "${DEPLOY_OVERCLOUD_TAGS}" \
         -e release_name=${RELEASE} \
         -e rdo_container_namespace=${RDO_RELEASE_OR_MASTER_IMAGES} \
+        -e redhat_docker_mirror=${REDHAT_DOCKER_MIRROR} \
         -e container_tag=${BUILD} \
         -e working_dir=/home/stack  \
         -e compute_scale="${COMPUTE_SCALE}" \

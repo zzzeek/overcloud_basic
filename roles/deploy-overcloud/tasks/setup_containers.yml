@@ -8,14 +8,14 @@
   stat:
     path: "{{ working_dir }}/containers-default-parameters.yaml"
   register: overcloud_containers_gt13
-  when: 
+  when:
     - release_numeric_version | int > 13
 
 - name: does containers-prepare-parameter.yaml (OSP>13) already exist?
   stat:
     path: "{{ working_dir }}/containers-prepare-parameter.yaml"
   register: containers_prepare_parameter
-  when: 
+  when:
     - release_numeric_version | int > 13
 
 # see https://github.com/openstack/tripleo-quickstart-extras/commit/b3794ff03ab841bbbc15a339e35a7ec02b193111#diff-51f6a4c98274d504643778b3633252cf
@@ -40,7 +40,7 @@
           openstack tripleo container image prepare
           --output-env-file {{ working_dir }}/containers-default-parameters.yaml
           -e {{ working_dir }}/containers-prepare-parameter.yaml
-      retries: 10 
+      retries: 10
       delay: 30
       register: result
       until: result.rc == 0
@@ -66,7 +66,7 @@
           openstack tripleo container image prepare
           --output-env-file {{ working_dir }}/containers-default-parameters.yaml
           -e {{ working_dir }}/containers-prepare-parameter.yaml
-      retries: 10 
+      retries: 10
       delay: 30
       register: result
       until: result.rc == 0
@@ -104,7 +104,7 @@
       shell: >
           source {{ working_dir }}/stackrc;
           openstack overcloud container image prepare
-          --namespace registry.access.redhat.com/rhosp{{ release_numeric_version }}
+          --namespace {{ redhat_docker_mirror }}/rhosp{{ release_numeric_version }}
           --push-destination {{ undercloud_management_ip }}:8787
           --prefix=openstack- \
           --tag-from-label {version}-{release} \
