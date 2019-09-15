@@ -1,31 +1,21 @@
-- name: does overcloud_containers.yaml (OSP<=13) already exist?
-  stat:
-    path: "{{ working_dir }}/overcloud_containers.yaml"
-  register: overcloud_containers_le13
-  when: release_numeric_version | int <= 13
-
-- name: does containers-default-parameters.yaml (OSP>13) already exist?
+- name: does containers-default-parameters.yaml already exist?
   stat:
     path: "{{ working_dir }}/containers-default-parameters.yaml"
-  register: overcloud_containers_gt13
-  when:
-    - release_numeric_version | int > 13
+  register: overcloud_containers
 
-- name: does containers-prepare-parameter.yaml (OSP>13) already exist?
+- name: does containers-prepare-parameter.yaml already exist?
   stat:
     path: "{{ working_dir }}/containers-prepare-parameter.yaml"
   register: containers_prepare_parameter
-  when:
-    - release_numeric_version | int > 13
 
 # see https://github.com/openstack/tripleo-quickstart-extras/commit/b3794ff03ab841bbbc15a339e35a7ec02b193111#diff-51f6a4c98274d504643778b3633252cf
 # note containers-prepare-parameter.yaml must be generated, either by us
 # or by undercloud install (comes from undercloud.conf)
 #
-- name: setup docker images, post-stein style where there's no podman registry
+- name: setup docker images, rocky and post
   when:
-    - release_numeric_version | int >= 15
-    - not overcloud_containers_gt13.stat.exists | bool
+    - release_numeric_version | int >= 14
+    - not overcloud_containers.stat.exists | bool
   block:
     - name: "create container configs, step 1"
       shell: >
@@ -45,36 +35,10 @@
       register: result
       until: result.rc == 0
 
-
-- name: setup docker images, post-queens (pre-stein) style
-  when:
-    - release_numeric_version | int > 13
-    - release_numeric_version | int < 15
-    - not overcloud_containers_gt13.stat.exists | bool
-  block:
-    - name: "create container configs, step 1"
-      shell: >
-          source {{ working_dir }}/stackrc;
-          openstack tripleo container image prepare default
-          --local-push-destination
-          --output-env-file {{ working_dir }}/containers-prepare-parameter.yaml
-      when: not containers_prepare_parameter.stat.exists | bool
-
-    - name: "create container configs, step 2 download"
-      shell: >
-          source {{ working_dir }}/stackrc;
-          openstack tripleo container image prepare
-          --output-env-file {{ working_dir }}/containers-default-parameters.yaml
-          -e {{ working_dir }}/containers-prepare-parameter.yaml
-      retries: 10
-      delay: 30
-      register: result
-      until: result.rc == 0
-
-- name: install docker images, queens and previous style
+- name: setup docker images, queens and previous style
   when:
     - release_numeric_version | int <= 13
-    - not overcloud_containers_le13.stat.exists | bool
+    - not overcloud_containers.stat.exists | bool
   block:
     - name: work around https://bugs.launchpad.net/tripleo/+bug/1727347
       stat:
@@ -88,28 +52,22 @@
       when: env_file.stat.exists | bool
 
 
-    - name: create RDO container configs
+    - name: "create rdo container configs, step 1"
       shell: >
           source {{ working_dir }}/stackrc;
           openstack overcloud container image prepare
           --namespace docker.io/tripleo{{ rdo_container_namespace }}
           --tag {{ container_tag }}
           --tag-from-label rdo_version
-          --push-destination {{ undercloud_management_ip }}:8787
           --output-env-file {{ working_dir }}/docker_registry.yaml
           --output-images-file overcloud_containers.yaml
       when: rhos_or_rdo == "rdo"
 
-    - name: create RHOS container configs
+    - name: "create rhos container configs, step 1"
       shell: >
           source {{ working_dir }}/stackrc;
           openstack overcloud container image prepare
-          --namespace {{ redhat_docker_mirror }}/rhosp{{ release_numeric_version }}
-          --push-destination {{ undercloud_management_ip }}:8787
-          --prefix=openstack- \
-          --tag-from-label {version}-{release} \
-          --output-env-file {{ working_dir }}/docker_registry.yaml
-          --output-images-file overcloud_containers.yaml
+          --output-env-file {{ working_dir }}/containers-prepare-parameter.yaml
       when: rhos_or_rdo == "rhos"
 
     - name: restore .tripleo environments directory if present
@@ -118,20 +76,14 @@
         chdir: "{{ working_dir }}/stackrc"
       when: env_file.stat.exists | bool
 
-      # something weird here when working manually:
-      # https://bugzilla.redhat.com/show_bug.cgi?id=1646787
-      # sudo bash
-      # [root@undercloud stack]# exec su -l stack
-      # then it works ?
-      # OK - when undercloud has been installed, stack user needs to log
-      # out and log in again in order to push to docker
-
-    - name: transfer docker images
+    - name: "create container configs, step 2 download config"
       shell: >
           source {{ working_dir }}/stackrc;
-          openstack overcloud container image upload --verbose
-          --config-file overcloud_containers.yaml
-      retries: 3
-      delay: 5
+          openstack overcloud container image prepare
+          --output-env-file {{ working_dir }}/containers-default-parameters.yaml
+          -e {{ working_dir }}/containers-prepare-parameter.yaml
+      retries: 10
+      delay: 30
       register: result
       until: result.rc == 0
+

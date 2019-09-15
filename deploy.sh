@@ -9,8 +9,8 @@ COMPUTE_SCALE="1"
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 NTP_SERVER="clock.corp.redhat.com"
 
-REDHAT_DOCKER_MIRROR="brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
-#REDHAT_DOCKER_MIRROR="registry.access.redhat.com"
+#REDHAT_DOCKER_MIRROR="brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+REDHAT_DOCKER_MIRROR="registry.access.redhat.com"
 
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images

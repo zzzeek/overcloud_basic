@@ -25,11 +25,7 @@ openstack overcloud deploy \
     -e ${OOO_HEAT_TEMPLATES}/environments/docker.yaml  \
 {% endif %}
     -e ${OOO_HEAT_TEMPLATES}/environments/docker-ha.yaml  \
-{% if release_numeric_version |int <= 13 %}
-    -e {{ working_dir }}/docker_registry.yaml  \
-{% else %}
     -e {{ working_dir }}/containers-default-parameters.yaml  \
-{% endif %}
     -e ${OOO_HEAT_TEMPLATES}/environments/network-isolation.yaml \
     -e {{ working_dir }}/network-environment.yaml  \
     -e ${OOO_HEAT_TEMPLATES}/environments/low-memory-usage.yaml     \
