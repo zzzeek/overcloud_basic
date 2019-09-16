@@ -9,8 +9,24 @@ COMPUTE_SCALE="1"
 NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 NTP_SERVER="clock.corp.redhat.com"
 
-#REDHAT_DOCKER_MIRROR="brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
-REDHAT_DOCKER_MIRROR="registry.access.redhat.com"
+RHEL_OR_RDO='rhel'
+RELEASE="15-trunk"
+#RELEASE="13"
+# RHEL_OR_RDO='rdo'
+# RELEASE=stein
+
+if [[ "${RHEL_OR_RDO}" == 'rdo' ]]; then
+    QCOW_URL="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
+else
+    if [[ "${RELEASE}" =~ "15" ]] ; then
+        REDHAT_DOCKER_MIRROR="brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888"
+        QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8.0/compose/BaseOS/x86_64/images/rhel-guest-image-8.0-1854.x86_64.qcow2"
+    else
+        REDHAT_DOCKER_MIRROR="registry.access.redhat.com"
+        QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-7.5/compose/Server/x86_64/images/rhel-guest-image-7.5-146.x86_64.qcow2"
+    fi
+fi
+
 
 CHECKOUTS=${SCRIPT_HOME}/checkouts
 OVERCLOUD_IMAGES=${SCRIPT_HOME}/downloaded_overcloud_images
@@ -26,12 +42,7 @@ ANSIBLE_PLAYBOOK=${INFRARED_CHECKOUT}/.venv/bin/ansible-playbook
 UNDERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_undercloud
 OVERCLOUD_HOSTS=${INFRARED_WORKSPACE}/hosts_overcloud
 
-# RHEL_OR_RDO='rdo'
-# RELEASE=stein
 
-RHEL_OR_RDO='rhel'
-#RELEASE="15-trunk"
-RELEASE="13"
 
 
 # this token goes into the URL as follows:
@@ -255,17 +266,6 @@ build_vms() {
     # problem?  make sure to use public-images with undercloud
     #    --image-url https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2 \
 
-    if [ "${RHEL_OR_RDO}" == 'rdo' ]; then
-        QCOW_URL="https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
-    else
-	# OSP15
-	# QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8.0/compose/BaseOS/x86_64/images/rhel-guest-image-8.0-1854.x86_64.qcow2"
-
-	# OSP13
-	QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-7.5/compose/Server/x86_64/images/rhel-guest-image-7.5-146.x86_64.qcow2"
-	#QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-7.6/compose/Server/x86_64/images/rhel-guest-image-7.6-210.x86_64.qcow2"
-        #QCOW_URL="http://download-node-02.eng.bos.redhat.com/rel-eng/latest-RHEL-8/compose/BaseOS/x86_64/images/rhel-guest-image-8.1-43.x86_64.qcow2"
-    fi
 
     infrared_cmd virsh -vv \
         --disk-pool="${DISK_POOL}" \

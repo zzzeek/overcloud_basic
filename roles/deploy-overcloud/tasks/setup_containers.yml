@@ -17,7 +17,7 @@
     - release_numeric_version | int >= 14
     - not overcloud_containers.stat.exists | bool
   block:
-    - name: "create container configs, step 1"
+    - name: "create container configs, step 1, should be there already however"
       shell: >
           source {{ working_dir }}/stackrc;
           openstack tripleo container image prepare default
