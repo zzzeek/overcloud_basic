@@ -10,8 +10,8 @@ NAMESERVERS="10.16.36.29,10.11.5.19,10.5.30.160"
 NTP_SERVER="clock.corp.redhat.com"
 
 RHEL_OR_RDO='rhel'
-RELEASE="15-trunk"
-#RELEASE="13"
+#RELEASE="15-trunk"
+RELEASE="13"
 # RHEL_OR_RDO='rdo'
 # RELEASE=stein
 
@@ -115,7 +115,7 @@ reset_workspace() {
 
 
 install_infrared() {
-    SYSTEM_PYTHON_2=/usr/bin/python2
+    SYSTEM_PYTHON_3=/usr/bin/python3
 
     # sudo yum install git gcc libffi-devel openssl-devel python-virtualenv libselinux-python
 
@@ -137,7 +137,7 @@ install_infrared() {
     if [[ ! -d ${INFRARED_CHECKOUT}/.venv ]]; then
         pushd ${INFRARED_CHECKOUT}
 
-        ${SYSTEM_PYTHON_2} -m virtualenv .venv
+        ${SYSTEM_PYTHON_3} -m virtualenv .venv
         . .venv/bin/activate
         pip install --upgrade pip
         pip install --upgrade setuptools
