@@ -18,7 +18,7 @@ parameters:
       is automatically resolved from the ctlplane subnet's gateway_ip attribute.)
     type: string
 
-{% if release_numeric_version >= 14 %}
+{% if release_numeric_version | int >= 14 %}
   ControlPlaneStaticRoutes:
     default: []
     description: >
@@ -43,7 +43,7 @@ parameters:
     default: 30
     description: Vlan ID for the storage network traffic.
     type: number
-{% if release_numeric_version >= 14 %}
+{% if release_numeric_version |int >= 14 %}
   StorageMtu:
     default: 1500
     description: The maximum transmission unit (MTU) size(in bytes) that is
@@ -73,7 +73,7 @@ parameters:
       guaranteed to pass through the data path of the segments in the
       StorageMgmt network.
     type: number
-{% if release_numeric_version >= 14 %}
+{% if release_numeric_version |int >= 14 %}
   StorageMgmtInterfaceRoutes:
     default: []
     description: >
